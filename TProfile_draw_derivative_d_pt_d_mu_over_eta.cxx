@@ -45,7 +45,8 @@ char * From_String_To_Char_Array( string & name){
     return (*char_name);
 }
 
-
+// This function gives the bin number in which the event by value of eta should be stored. 
+// Can be used for general stuff
 int Get_Bin_Of_Absolute_Value( vector<float> & etabin , float &eta ){
     for (int i = 0 ; i< etabin.size(); i++ ){
         if (abs(eta) <= etabin[i]){
@@ -125,14 +126,16 @@ void TProfile_draw_derivative_d_pt_d_mu_over_eta(){
     
 
     
-    TGraph * Pt_vs_mu[ (EtaBins.size() -1) * (PtBins.size()) ];
+    
+    // TProfile in which values are stored
+    // They are organized, such that each event of bin in eta and in pt is saved in corresponding 
+    // number of TProfile array. 
+    // If event has eta bin I and pt bin J, than it is stored in: (I-1)*PtBins.size() + J
     TProfile * TProfile_Pt_vs_mu_binned [ (EtaBins.size() -1) * (PtBins.size()) ];
     for ( int i=1; i< EtaBins.size(); i++ ){
         for ( int j=0; j< PtBins.size(); j++ ){
             string name_str = "TGraph_Pt_VS_Mu_"+to_string( ( i - 1 ) * PtBins.size() + j +1 )+";#mu;p_{T}";
-            Pt_vs_mu[ ( i - 1 ) * PtBins.size() + j ] = new TGraph();
-            Pt_vs_mu[( i - 1 ) * PtBins.size() + j]->SetName(From_String_To_Char_Array(name_str));
-            Pt_vs_mu[( i - 1 ) * PtBins.size() + j]->GetYaxis()->SetRange(5.0,120.0);
+            
             if (j != PtBins.size() -1 )
                 name_str = "TProfile_Pt_VS_Mu_Eta_"+to_string(EtaBins[i-1])+"_"+to_string(EtaBins[i])+"_"+"PT_"+to_string(PtBins[j])+"_"+to_string(PtBins[j+1])+"_"+to_string( ( i - 1 ) * PtBins.size() + j +1 )+";#mu;p_{T}";
             else
@@ -164,7 +167,7 @@ void TProfile_draw_derivative_d_pt_d_mu_over_eta(){
         Tree->SetBranchAddress("rho", &rho, &b_rho);
         Tree->SetBranchAddress("NPV", &NPV, &b_NPV);
         //recojet_pt->at(j)-pt->at(j)-jet_area->at(j)*rho*0.001
-        for(int ientry=0;ientry<Tree->GetEntries();ientry++){ 
+        for(int ientry=0;ientry<Tree->GetEntries()/1000;ientry++){ 
             Tree->GetEntry(ientry);
             for (int jet_iter = 0; jet_iter < pt->size(); jet_iter++  ){
                 //cout<< pt->at(jet_iter)<<" ";
@@ -204,6 +207,7 @@ void TProfile_draw_derivative_d_pt_d_mu_over_eta(){
 
     
     TCanvas* Averaged_pt_canvas[ ( EtaBins.size()-1) *PtBins.size()];
+    // Same as for TProfile, each fit is corresponding to I in eta bin and J in pt bin
     TF1 * averaged_linear_fit[ ( EtaBins.size()-1) *PtBins.size() ];
     for ( int i=1; i< EtaBins.size()-1; i++ ){
         for ( int j=0; j< PtBins.size(); j++ ){
