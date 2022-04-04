@@ -177,11 +177,13 @@ void TProfile_draw_derivative_d_pt_d_mu_over_eta(){
                 //cout<< eta_bin << " "<< pt_bin<<endl;
                 //cout<< jet_eta->at(jet_iter)  << " " <<  pt_true->at(jet_iter)<<endl ;
                 
+                // Check that eta's and pt's of events are in our range of interest
                 if (eta_bin > 0 && pt_bin > 0 ){
                     TProfile_Pt_vs_mu_binned [( eta_bin - 1 ) * PtBins.size() + pt_bin-1]->Fill( mu, pt->at(jet_iter) , weight  );
                     //TProfile_Pt_vs_mu_binned [( eta_bin - 1 ) * PtBins.size() + pt_bin-1]->Fill( mu, pt->at(jet_iter) - jet_area->at(jet_iter)*rho, weight  );
                     //TProfile_Pt_vs_mu_binned [( eta_bin - 1 ) * PtBins.size() + pt_bin-1]->Fill( mu, pt_true->at(jet_iter) , weight  );
                 }
+                // Here check that eta is in range of interest, as it goes to TProfile for whole range
                 if (eta_bin > 0){
                     TProfile_Pt_vs_mu_binned [( eta_bin - 1 ) * PtBins.size() + PtBins.size()-1]->Fill( mu, pt->at(jet_iter) , weight  );
                     //TProfile_Pt_vs_mu_binned [( eta_bin - 1 ) * PtBins.size() + PtBins.size()-1]->Fill( mu, pt->at(jet_iter) - jet_area->at(jet_iter)*rho , weight  );
