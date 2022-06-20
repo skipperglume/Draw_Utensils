@@ -22,6 +22,8 @@
 #include "TH3F.h"
 #include "TEnv.h"
 
+#include "Stack_H.h"
+
 using namespace std;
 
 bool FindSubString(const string  str, const  string  substr){
@@ -178,12 +180,14 @@ void Create_stacked_plot(){
     vector <string> a = String_Split(paths_to_ttrees[test_int]);
     Print_Vector_Line(a);
 
-    // 
+    
 
-    /*
+    int index =0;
     for (int i = 0 ; i <=  paths_to_ttrees.size()-1; i++){ 
         TFile* FILE_TO_TTREE = new TFile(From_String_To_Char_Array(paths_to_ttrees[i]),"read");
         cout<< "\n\n Processing file: "<<paths_to_ttrees[i]<<"\n";
+        index = Stack_Histi_Index(stack_tag, paths_to_ttrees[i]);
+        cout<<i<<"/"<<paths_to_ttrees.size()<<" : " << index<<endl;
         TTree* Tree = (TTree*) FILE_TO_TTREE->Get("IsolatedJet_tree");
         Tree->SetBranchAddress("jet_ConstitPt", &pt, &b_pt);
         Tree->SetBranchAddress("weight_tot", &weight_tot, &b_weight_tot);
@@ -195,39 +199,67 @@ void Create_stacked_plot(){
         Tree->SetBranchAddress("jet_ActiveArea4vec_pt", &jet_area, &b_jet_area);
         Tree->SetBranchAddress("rho", &rho, &b_rho);
         Tree->SetBranchAddress("NPV", &NPV, &b_NPV);
-        for(int ientry=0;ientry<Tree->GetEntries()/10;ientry++){ 
+        for(int ientry=0;ientry<Tree->GetEntries()/1000;ientry++){ 
+            
             Tree->GetEntry(ientry);
+            Int_t x_int=0;
+            Double_t x_double=0;
+            Double_t wght =0;
             for (int jet_iter = 0; jet_iter < pt->size(); jet_iter++  ){
                 //cout<< pt->at(jet_iter)<<" ";
-                
-                pT_weight->Fill(        pt->at(jet_iter), weight ) ;
-                pT_true_weight->Fill(   pt_true->at(jet_iter), weight ) ;
-                eta_weight->Fill(       jet_eta->at(jet_iter), weight ) ;
-                eta_true_weight->Fill(  jet_eta_true->at(jet_iter), weight ) ;
+                // tot_weight , one , weight , one_nth
+                bool is_int = false;
+                if (weight_name == "tot_weight")
+                    wght = weight_tot;
+                else if (weight_name == "one")
+                    wght = 1.0;
+                else if (weight_name == "weight")
+                    wght = weight;
+                else if (weight_name == "one_nth")
+                    {wght = 1/((float)pt->size());/*cout<<wght<<" "<<pt->size()<<"\n";*/}
+                else {cout<<"ERRROR WRONG WEIGHT\n";return -1;}
+
+                 vector<Float_t>* pt; //true pt    
+                Int_t           NPV;
+                Float_t         mu;
+                Double_t        weight_tot;
+                Float_t        weight;
+                std::vector<float>* jet_eta; //jet eta
+                std::vector<float>* jet_eta_true;
+                vector<Float_t>* pt_true;
+                vector<Float_t>* jet_area;
+                Float_t         rho;
+
+                // NPV , mu , constit pt , true pt, rho , jet area , constit eta , true eta
+                if (variable_name == "NPV"){
+                    is_int = true;
+                    x_int = NPV;
+                }
+                else if 
+
+                Histo_Stacked[index]->Fill(NPV,wght);
             }
             //cout<<"\n";
             //cout<<"weight_tot: "<<weight_tot<<"\n";
                 //pTtrue_weight->Fill(pt[jet_iter],weight);
+            /**/
         }
         cout<<Tree->GetEntries()<<"\n";
         FILE_TO_TTREE->Close();
     }
     
-    
-    pT_weight->Write();
-    pT_true_weight->Write();
-    eta_weight->Write();
-    eta_true_weight->Write();
+    /**/
 
     
-    */
+    
     TFile * Result = new TFile("result.root","recreate");
     for(int i=0;i<stack_tag.size();i++){
         string name = "JZ_"+to_string(i);
         Histo_Stacked[i]->Write();
     }
-   
+    
     Result->Close();
+    
 
 
 }
