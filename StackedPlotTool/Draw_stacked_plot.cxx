@@ -116,8 +116,32 @@ int Stack_Histi_Index(const vector<string> & vstr, const string path, char delim
 
 }
 
+
+vector<float>* Min_Max_Limits(TH1F* histos[], const int size){//
+    vector<float>* a = new vector<float>();
+    for (int  i =0; i < size ; i++){
+        // a->push_back( histos[i].GetMaximum() );
+        a->push_back((*(histos+i))->GetMaximum());
+        
+    }
+    float min = a->at(0);
+    float max = 0;
+    for (int  i =0; i < size ; i++){
+        if ( a->at(i) < min ) min = a->at(i);
+        max += a->at(i);
+    }
+    while (!a->empty())
+        a->pop_back();
+        
+    a->push_back(min);
+    a->push_back(max);
+    return a;
+}
+
 void Draw_stacked_plot(){
     cout<<"Welcome Aristocrat!"<<endl;
+
+    
     string str;
     ifstream infile ;
     vector <string> paths_to_ttrees ;
@@ -126,20 +150,27 @@ void Draw_stacked_plot(){
     const vector<string> stack_tag = {  "364700","364701","364702","364703","364704","364705","364706","364707","364708","364709","364710","364711","364712"}; 
     TH1F * Histo_Stacked [stack_tag.size()];
 
-    TFile * Result = new TFile("result.root","read");
+    TFile * Result = new TFile("/afs/cern.ch/work/d/dtimoshy/RC/mu_one_JZ_result.root","read");
 
     for(int i=0;i<stack_tag.size();i++){
         string name = "JZ_"+to_string(i);
         Histo_Stacked[i] = (TH1F*)Result->Get(From_String_To_Char_Array(name));
     }
     Histo_Stacked[0]->ls();
-    cout<<Histo_Stacked[0]->GetNbinsX()<<endl;
+    // cout<<Histo_Stacked[0]->GetNbinsX()<<endl;
+    for(int i=0;i<stack_tag.size();i++){
+        cout<< Histo_Stacked[i]->GetMaximum()<<endl;
+    }
+    cout<<"\n"<<endl;
+    vector<float> * a = Min_Max_Limits( Histo_Stacked, stack_tag.size() );//
+    Print_Vector_Line(*a);
     
     
     TCanvas *cst = new TCanvas("cst","stacked hists",10,10,700,700);
     cst->SetLogy();
     THStack *hs = new THStack("hs","Stacked 1D histograms");
-    
+    cout<<a->at(0)<<"\n"<<endl;
+    cout<<a->at(1)<<"\n"<<endl;
     
     // for(int i=0;i<stack_tag.size();i++){
     for(int i=stack_tag.size()-1;i>-1;i--){
@@ -153,8 +184,8 @@ void Draw_stacked_plot(){
     }
     // Histo_Stacked[2]->SetFillColor(2);
     // Histo_Stacked[0]->Draw("bar");
-    hs->SetMinimum(0.00000000000000001);
-    hs->SetMaximum(100000000);
+    hs->SetMinimum(a->at(0));
+    hs->SetMaximum(a->at(1));
     hs->SetTitle(From_String_To_Char_Array(histo_title_name));
     hs->Draw("bar");
 
@@ -171,12 +202,15 @@ void Draw_stacked_plot(){
 
     // hs->GetYaxis()->SetRangeUser(0.0001, 10.0);
     // hs->GetYaxis()->SetLimits(0.0001, 10.0);
-    cout<<stack_tag.size();
+    // cout<<stack_tag.size()<<endl;
+    
     cst->SaveAs("stack.png");
-   
+    /*
+    */
     Result->Close();
     
 
 }
+
 
 
