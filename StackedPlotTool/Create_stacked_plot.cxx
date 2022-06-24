@@ -205,6 +205,7 @@ void Create_stacked_plot(){
             Int_t x_int=0;
             Double_t x_double=0;
             Double_t wght =0;
+            // cout<<"jets num"<< pt->size()<<"NPV: "<<NPV<<endl;
             for (int jet_iter = 0; jet_iter < pt->size(); jet_iter++  ){
                 //cout<< pt->at(jet_iter)<<" ";
                 // tot_weight , one , weight , one_nth
@@ -216,28 +217,49 @@ void Create_stacked_plot(){
                 else if (weight_name == "weight")
                     wght = weight;
                 else if (weight_name == "one_nth")
-                    {wght = 1/((float)pt->size());/*cout<<wght<<" "<<pt->size()<<"\n";*/}
+                    {wght = 1.0/((float)pt->size());/*cout<<wght<<" "<<pt->size()<<"\n";*/}
                 else {cout<<"ERRROR WRONG WEIGHT\n";return -1;}
 
-                 vector<Float_t>* pt; //true pt    
-                Int_t           NPV;
-                Float_t         mu;
-                Double_t        weight_tot;
-                Float_t        weight;
-                std::vector<float>* jet_eta; //jet eta
-                std::vector<float>* jet_eta_true;
-                vector<Float_t>* pt_true;
-                vector<Float_t>* jet_area;
-                Float_t         rho;
-
-                // NPV , mu , constit pt , true pt, rho , jet area , constit eta , true eta
+                //  vector<Float_t>* pt; //true pt    
+                // Int_t           NPV;
+                // Float_t         mu;
+                // Double_t        weight_tot;
+                // Float_t        weight;
+                // std::vector<float>* jet_eta; //jet eta
+                // std::vector<float>* jet_eta_true;
+                // vector<Float_t>* pt_true;
+                // vector<Float_t>* jet_area;
+                // Float_t         rho;
+                // cout<<pt->at(0)<<endl;
+                // cout<<pt[0]<<endl;
+                // NPV , mu , constit_pt , true_pt, rho , jet_area , constit_eta , true_eta
                 if (variable_name == "NPV"){
                     is_int = true;
                     x_int = NPV;
                 }
-                else if 
-
-                Histo_Stacked[index]->Fill(NPV,wght);
+                else if (variable_name == "num_jets"){
+                    is_int = true;
+                    x_int = pt->size();
+                }                
+                else if (variable_name == "mu"){
+                    x_double = mu;}
+                else if (variable_name == "constit_pt"){
+                    x_double = (Double_t)(pt->at(jet_iter));}
+                // else if (variable_name == "true_pt"){
+                //     x_double = (Double_t)(pt_true->at(jet_iter));}
+                // else if (variable_name == "constit_eta"){
+                //     x_double = (Double_t)(jet_eta->at(jet_iter));}
+                // else if (variable_name == "true_eta"){
+                //     x_double = (Double_t)jet_eta_true->at(jet_iter);}
+                // else if (variable_name == "jet_area"){
+                //     x_double = (Double_t)jet_area->at(jet_iter);}
+                // else if (variable_name == "rho"){
+                //     x_double = (Double_t)rho;}
+                
+                if (is_int)
+                    Histo_Stacked[index]->Fill(x_int,       wght );
+                else
+                    Histo_Stacked[index]->Fill(x_double,    wght );
             }
             //cout<<"\n";
             //cout<<"weight_tot: "<<weight_tot<<"\n";
@@ -251,10 +273,10 @@ void Create_stacked_plot(){
     /**/
 
     
-    
-    TFile * Result = new TFile("result.root","recreate");
+    string name = variable_name+"_"+weight_name+"_"+legend_name+"_"+"result.root";
+    TFile * Result = new TFile(From_String_To_Char_Array(name),"recreate");
     for(int i=0;i<stack_tag.size();i++){
-        string name = "JZ_"+to_string(i);
+        string name = legend_name+"_"+to_string(i);
         Histo_Stacked[i]->Write();
     }
     
@@ -263,4 +285,3 @@ void Create_stacked_plot(){
 
 
 }
-
