@@ -32,7 +32,7 @@ using namespace std;
 vector<float> PtBins2= { 10.0, 20.0, 30.0, 60.0, 120.0, 200.0};
 vector<float> EtaBins2 = {0.0, 0.4,0.8,1.2,1.6,2.0,2.4,2.8,3.2,3.6,4.5};
 
-//vector<float> NpvBins2 = {2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32};
+vector<float> NpvBins2 = {2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32};
 // vector<float> NpvBins2 = {2,4,30,32};
 
 vector<float> MuBins2= {0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39, 42};
@@ -48,13 +48,13 @@ vector<float> Config_PtBins = { 10.0, 15.0, 20.0, 30.0, 60.0, 120.0, 200.0 };
 vector<Int_t> Config_NpvBins = {};
 vector<float> Config_MuBins = {};
 
-string correction = "None";
-//string correction = "Area";
+// string correction = "None";
+string correction = "Area";
 //string correction = "1D";
 //string correction = "3D";
 
-string PT_Dependence_On = "Mu";
-//string PT_Dependence_On = "NPV";
+// string PT_Dependence_On = "Mu";
+string PT_Dependence_On = "NPV";
 
 //vector<double> NPVTerm =    {0.025, -0.004, 0.057, -0.036, 0.145, 0.056, 0.479, -0.261, 0.051, 0.326, 0.032, 50951.609};
 //vector<double> MuTerm =     {-0.001, -0.009, -0.020, -0.019, -0.063, -0.068, -0.324, 0.116, -0.055, -0.193, -0.011, -17788.504};

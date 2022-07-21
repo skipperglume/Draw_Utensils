@@ -1,4 +1,4 @@
-#include "Derivative_H.h"
+#include "Inclusive_H.h"
 
 
 
@@ -178,7 +178,7 @@ double Interpolation (vector<double> etaBins, vector<double> term, vector<double
 }
 
 
-void new_try(){
+void Create_TProfiles(){
     
     cout<<"Welcome Aristocrat!"<<endl;
     Initialize_Binning();
@@ -190,21 +190,22 @@ void new_try(){
 
     
     if(PT_Dependence_On == "NPV"){
-        MuBins = NpvBins2;
+        // MuBins = NpvBins2;
         PtBins = PtBins2;
         EtaBins = EtaBins2;
-        NpvBins = MuBins2;
+        NpvBins = NpvBins2;
     }
     if(PT_Dependence_On == "Mu"){
         MuBins = MuBins2;
         PtBins = PtBins2;
         EtaBins = EtaBins2;
-        NpvBins = NpvBins2;
+        // NpvBins = NpvBins2;
     }
     
+    // Print_Vector_Line(Config_EtaBins);
     
 
-    /*
+    
     string str;
     ifstream infile ;
     vector <string> paths_to_ttrees ;
@@ -258,7 +259,7 @@ void new_try(){
 
 
     
-   
+    
     
 
     
@@ -267,25 +268,35 @@ void new_try(){
     // They are organized, such that each event of bin in eta and in pt is saved in corresponding 
     // number of TProfile array. 
     // If event has eta bin I and pt bin J, than it is stored in: (I-1)*PtBins.size() + J
+    int IS_NPV = 0; 
+    int IS_Mu = 0; 
+    if (PT_Dependence_On == "Mu")
+        IS_Mu = 1;
+    if (PT_Dependence_On == "NPV")
+        IS_NPV = 1;
     vector<int> check;
-    TProfile * TProfile_Pt_vs_mu_binned [ (EtaBins.size() -1) * (PtBins.size()) *( NpvBins.size()-1 ) ];
+    TProfile * TProfile_Pt_vs_mu_binned [ (EtaBins.size() -1) * (PtBins.size()) ];
     for ( int i=0; i< EtaBins.size()-1; i++ ){
         for ( int j=0; j< PtBins.size(); j++ ){
-            for ( int k=0; k< NpvBins.size()-1; k++ ){
-                int iter = i + ( EtaBins.size() - 1 )*j +  ( EtaBins.size() - 1 )*( PtBins.size() )*k ;
-                string name_str = Create_Name_eta_pt_NPV_mu("TGraph_Pt_VS_Mu",i, j, k, 0, iter );
-                
-                check.push_back(iter);
-                
-                name_str = Create_Name_eta_pt_NPV_mu("TProfile_Pt_VS_Mu_Eta_",i, j, k, 0, iter,  ";#mu;p_{T}");
-                
-                TProfile_Pt_vs_mu_binned[ i + ( EtaBins.size() - 1 )*j +  ( EtaBins.size() - 1 )*( PtBins.size() )*k ] = new TProfile(From_String_To_Char_Array(name_str),From_String_To_Char_Array(name_str), MuBins.size(), MuBins[0],MuBins[MuBins.size()-1],  0.0,10000.0 );
-                TProfile_Pt_vs_mu_binned[ i + ( EtaBins.size() - 1 )*j +  ( EtaBins.size() - 1 )*( PtBins.size() )*k ]->Sumw2();
-                cout<< From_String_To_Char_Array(name_str)<<endl;
-            }
+            
+            int iter = i + ( EtaBins.size() - 1 )*j;
+            
+            string name_str = Create_Name_eta_pt_NPV_mu("TGraph_Pt_VS_Mu",i, j, IS_NPV, IS_Mu, iter );
+            
+            check.push_back(iter);
+            
+            name_str = Create_Name_eta_pt_NPV_mu("TProfile_Pt_VS_Mu_Eta_",i, j, IS_NPV, IS_Mu, iter,  ";#mu;p_{T}");
+            if(PT_Dependence_On == "Mu")
+                TProfile_Pt_vs_mu_binned[ iter ] = new TProfile(From_String_To_Char_Array(name_str),From_String_To_Char_Array(name_str), MuBins.size(), MuBins[0], MuBins[ MuBins.size()-1],  0.0,10000.0 );
+            if(PT_Dependence_On == "NPV")
+                TProfile_Pt_vs_mu_binned[ iter ] = new TProfile(From_String_To_Char_Array(name_str),From_String_To_Char_Array(name_str), NpvBins.size(), NpvBins[0], NpvBins[ NpvBins.size()-1],  0.0,10000.0 );
+            TProfile_Pt_vs_mu_binned[ iter ]->Sumw2();
+            cout<< From_String_To_Char_Array(name_str)<<endl;
+            
         }
     }
-    
+    cout<< EtaBins.size()<<endl;
+    cout<< PtBins.size()<<endl;
     
     
     
@@ -295,8 +306,10 @@ void new_try(){
 	TList *CoeffLists = (TList*)f->Get("param3D");
     Print_Vector_Line(EtaBins);
     Print_Vector_Line(PtBins);
-    Print_Vector_Line(NpvBins);
-    Print_Vector_Line(MuBins);
+    // Print_Vector_Line(NpvBins);
+    // Print_Vector_Line(MuBins);
+
+    
     
     for (int i = 0 ; i <=  paths_to_ttrees.size()-1 ; i++){
         TFile* FILE_TO_TTREE = new TFile(From_String_To_Char_Array(paths_to_ttrees[i]),"read");
@@ -333,29 +346,52 @@ void new_try(){
             //cout<<luminosity<<"\n";
             //weight*=luminosity;
             //weight_tot*=luminosity;
+            
             for (int jet_iter = 0; jet_iter < pt->size(); jet_iter++  ){
                 //cout<< pt->at(jet_iter)<<"\n";
                 
                 int eta_bin = Get_Bin_Of_Absolute_Value_T( EtaBins, jet_eta->at(jet_iter) );
                 int pt_bin = Get_Bin_Of_Absolute_Value_T( PtBins, pt_true->at(jet_iter) );
-                int NPV_bin = Get_Bin_Of_Absolute_Value_T( NpvBins, NPV);
-                int mu_bin = Get_Bin_Of_Absolute_Value_T( MuBins,mu );
+                // int NPV_bin = Get_Bin_Of_Absolute_Value_T( NpvBins, NPV);
+                // int mu_bin = Get_Bin_Of_Absolute_Value_T( MuBins,mu );
                 //cout<< eta_bin << " "<< pt_bin<<endl;
                 //cout<< jet_eta->at(jet_iter)  << " " <<  pt_true->at(jet_iter)<<endl ;
                 
-                int iter = ( eta_bin -1 ) + ( EtaBins.size() - 1 )*( pt_bin -1 ) +  ( EtaBins.size() - 1 )*( PtBins.size() )*( NPV_bin -1 );
-                int iter_inclusive = ( eta_bin -1 ) + ( EtaBins.size() - 1 )*( PtBins.size() -1 ) +  ( EtaBins.size() - 1 )*( PtBins.size() )*( NPV_bin -1 );
+                int iter = ( eta_bin -1 ) + ( EtaBins.size() - 1 )*( pt_bin -1 ) ;
+                int iter_inclusive = ( eta_bin -1 ) + ( EtaBins.size() - 1 )*( PtBins.size() -1 ) ;
                 
-                //cout<< "eta bin: "<< eta_bin<<endl;
-                //cout<< "pt bin: "<< pt_bin<<endl;
+                // cout<<"eta value: "<< jet_eta->at(jet_iter)<< " | eta bin: "<< eta_bin<<endl;
+                // cout<<"pt value: "<< pt_true->at(jet_iter)<< " | pt bin: "<< pt_bin<<endl;
                 //cout<<"NPV: "<<NPV<< " NPV bin: "<< NPV_bin<<endl;
                 //cout<< " mu bin: "<< mu_bin<<endl;
-                
+                if(eta_bin > 0  ){
+                    if(correction == "None"){
+                        // cout<<"check I\n";
+                        if (pt_bin > 0)
+                            TProfile_Pt_vs_mu_binned [iter]->Fill( mu, pt->at(jet_iter) , weight_tot  );
+                        // cout<<"check II\n";
+                        if (pt_bin >= PtBins[0] && pt_bin <= PtBins[PtBins.size()-1])
+                            TProfile_Pt_vs_mu_binned [iter_inclusive]->Fill( mu, pt->at(jet_iter) , weight_tot  );
+                        // cout<<"check III\n";
+                    }
+                    if(correction == "Area"){
+                        Double_t pt_area = pt->at(jet_iter) - jet_area->at(jet_iter)*rho ;
+                        cout<<"pt area: "<<pt_area << " pt: "<< pt->at(jet_iter) <<" diff: "<< jet_area->at(jet_iter)*rho<< " true - reco: " <<pt_true->at(jet_iter) <<"\n";
+
+                        // cout<<"check I\n";
+                        if (pt_bin > 0)
+                            TProfile_Pt_vs_mu_binned [iter]->Fill( mu, pt_area , weight_tot  );
+                        // cout<<"check II\n";
+                        if (pt_bin >= PtBins[0] && pt_bin <= PtBins[PtBins.size()-1])
+                            TProfile_Pt_vs_mu_binned [iter_inclusive]->Fill( mu, pt_area , weight_tot  );
+                        // cout<<"check III\n";
+                    }
+                }
+
+                /*
                 if (eta_bin > 0 && pt_bin > 0 && NPV_bin > 0){
                     
-                    if(correction == "None"){
-                        TProfile_Pt_vs_mu_binned [iter]->Fill( mu, pt->at(jet_iter) , weight_tot  );
-                    }
+                    
                     else if(correction == "Area"){
                         Double_t pt_area = pt->at(jet_iter) - jet_area->at(jet_iter)*rho ;
                         //cout<<"pt area: "<<pt_area << " pt: "<< pt->at(jet_iter) <<" diff: "<< jet_area->at(jet_iter)*rho <<"\n";
@@ -461,13 +497,15 @@ void new_try(){
                     //cout<< eta_bin << " "<< pt_bin<<endl;
                     //cout<< jet_eta->at(jet_iter)  << " " <<  pt_true->at(jet_iter)<<endl ;
                 }
+            */
             }
+            
         }
         cout<<Tree->GetEntries()<<"\n";
         FILE_TO_TTREE->Close();
     }
     f->Close();
-    
+    /*
     string name_to_save = "/afs/cern.ch/work/d/dtimoshy/RC/Draw_Utensils/project_derivative/saved_TProfiles_Dependence_On_"+PT_Dependence_On+"_CORR_"+correction+".root";
     TFile * saved_TProfiles = new TFile(From_String_To_Char_Array(name_to_save),"recreate");
     for ( int i=0; i< EtaBins.size()-1; i++ ){
