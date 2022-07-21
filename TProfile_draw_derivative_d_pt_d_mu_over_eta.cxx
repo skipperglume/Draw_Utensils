@@ -59,6 +59,18 @@ int Get_Bin_Of_Absolute_Value( vector<float> & etabin , float &eta ){
     return -1;
 }
 
+int Get_Bin_Of_Absolute_Value_Int( vector<float> & etabin , int &eta ){
+    for (int i = 0 ; i< etabin.size(); i++ ){
+        if (abs(eta) <= etabin[i]){
+            if (i == 0)
+                return -1;
+            else 
+                return i;
+        }
+    }
+    return -1;
+}
+
 int Get_Bin_Of_Value( vector<float> & etabin , float &eta ){
     for (int i = 0 ; i< etabin.size(); i++ ){
         if ( eta <= etabin[i]){
@@ -70,7 +82,39 @@ int Get_Bin_Of_Value( vector<float> & etabin , float &eta ){
     }
     return -1;
 }
+Double_t DeltaPtResidual(Double_t pt, Double_t z, Double_t f,Double_t s ){
+    return z + f*pt+s*TMath::Log(pt);
 
+}
+Double_t Get_Correction(TList * CoeffLists, Double_t pt, int eta_bin, int NPV_bin, int mu_bin){
+    string zero_order_name = "intersections";
+    string first_order_name = "slopes";
+    string second_order_name = "SecondOrderCoeff";
+    //CoeffLists->Print();
+    TList * intercepts = (TList *) CoeffLists->FindObject(From_String_To_Char_Array(zero_order_name));	
+    
+	TList * slopes = (TList *) CoeffLists->FindObject(From_String_To_Char_Array(first_order_name));	
+    
+	TList * secondOs = (TList *) CoeffLists->FindObject(From_String_To_Char_Array(second_order_name));	
+
+    Double_t coeff_i = 0.0 ;
+	Double_t coeff_s = 0.0 ;
+	Double_t coeff_SO = 0.0 ;
+
+    string name_of_th2d = "intersections_eta"+to_string(eta_bin);
+	TH2D * TH2D_intercept = (TH2D*)intercepts->FindObject(From_String_To_Char_Array(name_of_th2d));
+	name_of_th2d = "slopes_eta"+to_string(eta_bin);
+    TH2D * TH2D_slope = (TH2D*)slopes->FindObject(From_String_To_Char_Array(name_of_th2d));
+    name_of_th2d = "intersections_eta"+to_string(eta_bin);
+    TH2D * TH2D_secondO = (TH2D*)secondOs->FindObject(From_String_To_Char_Array(name_of_th2d));
+
+    coeff_i = TH2D_intercept->GetBinContent(NPV_bin,mu_bin);
+    coeff_s = TH2D_slope->GetBinContent(NPV_bin,mu_bin);
+    coeff_SO = TH2D_secondO->GetBinContent(NPV_bin,mu_bin);
+    
+    
+    return DeltaPtResidual(pt,coeff_i,coeff_s,coeff_SO );
+}
 
 void TProfile_draw_derivative_d_pt_d_mu_over_eta(){
     cout<<"Welcome Aristocrat!"<<endl;
@@ -89,17 +133,20 @@ void TProfile_draw_derivative_d_pt_d_mu_over_eta(){
     }
     infile.close();
 
+
+    
+	
     
 
     
     
-    vector<Float_t>* pt; //true pt    
+    vector<Float_t>* pt;   
     Int_t           NPV;
     Float_t         mu;
     Double_t        weight_tot;
     Float_t        weight;
     std::vector<float>* jet_eta; //jet eta
-    vector<Float_t>* pt_true;
+    vector<Float_t>* pt_true;   //true pt  
     vector<Float_t>* jet_area;
     Float_t         rho;
 
@@ -114,6 +161,7 @@ void TProfile_draw_derivative_d_pt_d_mu_over_eta(){
     TBranch* b_rho;
     
     
+    vector<float> NPVBins = {};
     vector<float> MuBins = {};
     vector<float> PtBins = { 5.0, 20.0, 30.0, 60.0, 120.0};
     //vector<float> PtBins = { 0.0, 200.0};
@@ -121,6 +169,10 @@ void TProfile_draw_derivative_d_pt_d_mu_over_eta(){
     //38
     for ( int i = 0 ; i <= 72 ; i+=3 ){
         MuBins.push_back(1.0*i);
+        //cout<<MuBins[i/3]<<endl;
+    }
+    for ( int i = 0 ; i <= 50 ; i+=2 ){
+        NPVBins.push_back(1.0*i);
         //cout<<MuBins[i/3]<<endl;
     }
     
@@ -140,18 +192,19 @@ void TProfile_draw_derivative_d_pt_d_mu_over_eta(){
                 name_str = "TProfile_Pt_VS_Mu_Eta_"+to_string(EtaBins[i-1])+"_"+to_string(EtaBins[i])+"_"+"PT_"+to_string(PtBins[j])+"_"+to_string(PtBins[j+1])+"_"+to_string( ( i - 1 ) * PtBins.size() + j +1 )+";#mu;p_{T}";
             else
                 name_str = "TProfile_Pt_VS_Mu_Eta_"+to_string(EtaBins[i-1])+"_"+to_string(EtaBins[i])+"_"+"PT_"+to_string(PtBins[0])+"_"+to_string(PtBins[PtBins.size() -1])+"_"+to_string( ( i - 1 ) * PtBins.size() + j +1 )+";#mu;p_{T}";
-            TProfile_Pt_vs_mu_binned [( i - 1 ) * PtBins.size() + j] = new TProfile(From_String_To_Char_Array(name_str),From_String_To_Char_Array(name_str), MuBins.size(), MuBins[0],MuBins[MuBins.size()-1],  PtBins[0],PtBins[PtBins.size()-1] );
-            
+            TProfile_Pt_vs_mu_binned [( i - 1 ) * PtBins.size() + j] = new TProfile(From_String_To_Char_Array(name_str),From_String_To_Char_Array(name_str), MuBins.size(), MuBins[0],MuBins[MuBins.size()-1],  PtBins[0],10000.0);
+            cout<<( i - 1 ) * PtBins.size() + j<<endl;
             cout<< From_String_To_Char_Array(name_str)<<endl;
-            
+            TProfile_Pt_vs_mu_binned[(i-1)*PtBins.size() + j]->SetLineColor(kBlue);
         }
     }
     
 
-    Int_t NPV_Cut = 15;
-
+    //Int_t NPV_Cut = 15;
     
-    
+    string path_to_parameters = "/afs/cern.ch/work/d/dtimoshy/RC/saved/residualCalibParameters.root";	
+	TFile *f = new TFile(From_String_To_Char_Array(path_to_parameters));
+	TList *CoeffLists = (TList*)f->Get("param3D");
     
     for (int i = 0 ; i <=  paths_to_ttrees.size()-1 ; i++){
         TFile* FILE_TO_TTREE = new TFile(From_String_To_Char_Array(paths_to_ttrees[i]),"read");
@@ -167,33 +220,53 @@ void TProfile_draw_derivative_d_pt_d_mu_over_eta(){
         Tree->SetBranchAddress("rho", &rho, &b_rho);
         Tree->SetBranchAddress("NPV", &NPV, &b_NPV);
         //recojet_pt->at(j)-pt->at(j)-jet_area->at(j)*rho*0.001
-        for(int ientry=0;ientry<Tree->GetEntries()/1000;ientry++){ 
+        for(int ientry=0;ientry<Tree->GetEntries();ientry++){ 
             Tree->GetEntry(ientry);
             for (int jet_iter = 0; jet_iter < pt->size(); jet_iter++  ){
                 //cout<< pt->at(jet_iter)<<" ";
-                if (NPV == NPV_Cut){
+                {
                 int eta_bin = Get_Bin_Of_Absolute_Value( EtaBins, jet_eta->at(jet_iter) );
                 int pt_bin = Get_Bin_Of_Absolute_Value( PtBins, pt_true->at(jet_iter) );
+                int npv_bin = Get_Bin_Of_Absolute_Value_Int( NPVBins, NPV );
+                int mu_bin = Get_Bin_Of_Absolute_Value( MuBins, mu );
+                
+                
+                //cout<< "eta: "<<jet_eta->at(jet_iter)<<" "<< eta_bin<<EtaBins[eta_bin]<<" "<<eta_bin<<endl;
+                //cout<< "eta: "<<jet_eta->at(jet_iter)<<" "<< eta_bin<<EtaBins[eta_bin]<<" "<<eta_bin<<endl;
+                //cout<< "eta: "<<jet_eta->at(jet_iter)<<" "<< eta_bin<<EtaBins[eta_bin]<<" "<<eta_bin<<endl;
+                //cout<< "eta: "<<jet_eta->at(jet_iter)<<" "<< eta_bin<<EtaBins[eta_bin]<<" "<<eta_bin<<endl;
                 //cout<< eta_bin << " "<< pt_bin<<endl;
                 //cout<< jet_eta->at(jet_iter)  << " " <<  pt_true->at(jet_iter)<<endl ;
                 
                 // Check that eta's and pt's of events are in our range of interest
                 if (eta_bin > 0 && pt_bin > 0 ){
-                    TProfile_Pt_vs_mu_binned [( eta_bin - 1 ) * PtBins.size() + pt_bin-1]->Fill( mu, pt->at(jet_iter) , weight  );
+                    
+                    Double_t pt_area = pt->at(jet_iter) - jet_area->at(jet_iter)*rho;
+                    Double_t DeltaResidual = Get_Correction(CoeffLists, pt_area,  eta_bin,  npv_bin,  mu_bin);
+                    //cout<< "eta: "<<jet_eta->at(jet_iter)<<" "<<EtaBins[eta_bin]<<" "<<eta_bin<<endl;
+                    //cout<< "npv: "<<NPV<<" " <<NPVBins[npv_bin]<<" "<<npv_bin<<endl;
+                    //cout<< "mu: "<<mu<<" "<<MuBins[mu_bin]<<" "<<mu_bin<<endl;
+                    //cout<< "pt_area: "<<pt_area<<endl;
+                    //cout<<"Dpt: "<<DeltaResidual<<endl;
+                    if (DeltaResidual == DeltaResidual && pt_area - DeltaResidual > 0){
+                        TProfile_Pt_vs_mu_binned [( eta_bin - 1 ) * PtBins.size() + pt_bin-1]->Fill( mu, pt_area - DeltaResidual , weight  );
+                    }
+                    
+                    
                     //TProfile_Pt_vs_mu_binned [( eta_bin - 1 ) * PtBins.size() + pt_bin-1]->Fill( mu, pt->at(jet_iter) - jet_area->at(jet_iter)*rho, weight  );
                     //TProfile_Pt_vs_mu_binned [( eta_bin - 1 ) * PtBins.size() + pt_bin-1]->Fill( mu, pt_true->at(jet_iter) , weight  );
                 }
                 // Here check that eta is in range of interest, as it goes to TProfile for whole range
                 if (eta_bin > 0){
-                    TProfile_Pt_vs_mu_binned [( eta_bin - 1 ) * PtBins.size() + PtBins.size()-1]->Fill( mu, pt->at(jet_iter) , weight  );
+                    Double_t pt_area = pt->at(jet_iter) - jet_area->at(jet_iter)*rho;
+                    Double_t DeltaResidual = Get_Correction(CoeffLists, pt_area,  eta_bin,  npv_bin,  mu_bin);
+                    if (DeltaResidual == DeltaResidual && pt_area - DeltaResidual > 0){
+                        TProfile_Pt_vs_mu_binned [( eta_bin - 1 ) * PtBins.size() + PtBins.size()-1]->Fill( mu, pt_area - DeltaResidual , weight  );
+                    }
                     //TProfile_Pt_vs_mu_binned [( eta_bin - 1 ) * PtBins.size() + PtBins.size()-1]->Fill( mu, pt->at(jet_iter) - jet_area->at(jet_iter)*rho , weight  );
                     //TProfile_Pt_vs_mu_binned [( eta_bin - 1 ) * PtBins.size() + PtBins.size()-1]->Fill( mu, pt_true->at(jet_iter) , weight  );
                 }
-                if ( eta_bin == 1 && pt_bin == 1){
-                    //cout<<( eta_bin - 1 ) * PtBins.size() + pt_bin-1<<endl;
-                    //cout<< eta_bin << " "<< pt_bin<<endl;
-                    //cout<< jet_eta->at(jet_iter)  << " " <<  pt_true->at(jet_iter)<<endl ;
-                }
+                
                     
                 }
 
@@ -204,22 +277,27 @@ void TProfile_draw_derivative_d_pt_d_mu_over_eta(){
         cout<<Tree->GetEntries()<<"\n";
         FILE_TO_TTREE->Close();
     }
-
-
-
     
+    
+    
+    
+    
+    //cout<<"Error"<<endl;
     TCanvas* Averaged_pt_canvas[ ( EtaBins.size()-1) *PtBins.size()];
     // Same as for TProfile, each fit is corresponding to I in eta bin and J in pt bin
     TF1 * averaged_linear_fit[ ( EtaBins.size()-1) *PtBins.size() ];
     for ( int i=1; i< EtaBins.size()-1; i++ ){
         for ( int j=0; j< PtBins.size(); j++ ){
-
             string name_str = "averaged_canvas" + to_string( (i-1)*PtBins.size() + j +1) ;
             Averaged_pt_canvas[(i-1)*PtBins.size() + j] = new TCanvas(From_String_To_Char_Array(name_str), From_String_To_Char_Array(name_str), 800, 800);
             Averaged_pt_canvas[(i-1)*PtBins.size() + j]->cd();
-            
+            cout<< (i-1)*PtBins.size() + j<<endl;
             TProfile_Pt_vs_mu_binned[(i-1)*PtBins.size() + j]->SetLineColor(kBlue);
+            
+            
             TProfile_Pt_vs_mu_binned[(i-1)*PtBins.size() + j]->Draw();
+            
+           
             
             
             
@@ -243,8 +321,12 @@ void TProfile_draw_derivative_d_pt_d_mu_over_eta(){
             name_str = "/afs/cern.ch/work/d/dtimoshy/RC/Draw_Utensils/tgraphs_pt_vs_mu/averaged_"+to_string((i-1)*PtBins.size() + j+1)+"_pt_vs_mu.png";
             Averaged_pt_canvas[(i-1)*PtBins.size() + j]->SaveAs(From_String_To_Char_Array(name_str));
             cout<<"\n";
+            /**/
+        
         }
     }
+    
+    cout<<"Error"<<endl;
     TCanvas* Slopes[ PtBins.size()];
     TGraph * Slopes_Graph[ PtBins.size()];
     for ( int j=0; j< PtBins.size(); j++ ){
@@ -273,8 +355,18 @@ void TProfile_draw_derivative_d_pt_d_mu_over_eta(){
         name_str = "/afs/cern.ch/work/d/dtimoshy/RC/Draw_Utensils/tgraphs_pt_vs_mu/slopes_"+to_string(j+1)+"_pt_vs_mu.png";
         Slopes[j]->SaveAs(From_String_To_Char_Array(name_str));
     }
-    
-
+    TFile * outfile = new TFile("outfile_residual.root","recreate");  
+    outfile->cd();  
+    for ( int j=0; j< PtBins.size(); j++ ){
+        Slopes_Graph[j]->Write();
+    }
+    outfile->Close();
+    /**/
+    f->Close();
+    cout<<"npv: "<<NPVBins.size()<<endl;
+    cout<<"mu: "<<MuBins.size()<<endl;
+    cout<<"eta: "<<EtaBins.size()<<endl;
+    cout<<"pt: "<<PtBins.size()<<endl;
 }
 
 
