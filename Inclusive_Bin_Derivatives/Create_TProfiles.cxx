@@ -10,15 +10,7 @@ bool BOOL_exists_file (const string& name) {
         return false;
     }   
 }
-char * From_String_To_Char_Array( string & name){
-    char * char_name[500];
-    for (int i =0; i < name.size();i++){
-        //cout<<name.at(i);
-        char_name[i] = & name.at(i);
-    }
-    
-    return (*char_name);
-}
+
 
 // This function gives the bin number in which the event by value of eta should be stored. 
 // Can be used for general stuff
@@ -70,29 +62,7 @@ Double_t Total_TProfile_Entries(TProfile & TProf){
     return total;
 }
 
-vector<int> Boundaries_Of_Fit(TProfile & TProf){
-    vector<int> a;
-    cout<< TProf.GetNbinsX()<<endl;
-    cout<< TProf.GetNbinsY()<<endl;
-    int x_min=0;
-    int x_max=0;
-    for (int i =1 ; i < TProf.GetNbinsX()+1; i++) {
-        if ( TProf.GetBinContent( i )>0){
-            if(x_min==0)
-                x_min=i;
-            x_max=i;
-        }
-        cout<< TProf.GetBinContent(i)<<"; ";
-        
-    }
-    
-    cout<<"\n";
-    a.push_back(x_min);
-    a.push_back(x_max);
-    cout<<"First: "<<a[0]<<" Second: "<<a[1]<<"\n";
-    return a;
 
-}
 template <typename T , typename Y> 
 int Get_Bin_Of_Absolute_Value_T( vector<T> & etabin ,  Y &eta ){
     for (int i = 0 ; i< etabin.size(); i++ ){
@@ -105,18 +75,8 @@ int Get_Bin_Of_Absolute_Value_T( vector<T> & etabin ,  Y &eta ){
     }
     return -1;
 }
-template <typename T , typename Y,  typename U, typename I, typename O> 
-string Create_Name_eta_pt_NPV_mu(string custom, T eta, Y pt, U NPV, I mu, O n, string end = "" ){
-    string out = "";
-    out = custom;
-    out += "_eta_"+to_string((int)(eta));
-    out += "_pt_"+to_string((int)pt);
-    out += "_NPV_"+to_string((int)NPV);
-    out += "_mu_"+to_string((int)mu);
-    out += "_n_"+to_string((int)n);
-    out += end;
-    return out;
-}
+
+
 
 Double_t DeltaPtResidual(Double_t pt, Double_t z, Double_t f,Double_t s ){
     return z + f*pt+s*TMath::Log(pt);
@@ -154,7 +114,7 @@ Double_t Get_Correction(TList * CoeffLists, Double_t pt, int eta_bin, int NPV_bi
 }
 
 vector<double> ComputeOffsets(vector<double> etaBins, vector<double> term){
-  std::vector <double> offset;
+  vector<double> offset;
   offset.push_back(term.at(0));  
   for(unsigned int i=1; i<etaBins.size();++i){
     double espace = etaBins.at(i)-etaBins.at(i-1);
@@ -287,7 +247,7 @@ void Create_TProfiles(){
             
             name_str = Create_Name_eta_pt_NPV_mu("TProfile_Pt_VS_Mu_Eta_",i, j, IS_NPV, IS_Mu, iter,  ";#mu;p_{T}");
             if(PT_Dependence_On == "Mu")
-                TProfile_Pt_vs_mu_binned[ iter ] = new TProfile(From_String_To_Char_Array(name_str),From_String_To_Char_Array(name_str), MuBins.size(), MuBins[0], MuBins[ MuBins.size()-1],  0.0,10000.0 );
+                TProfile_Pt_vs_mu_binned[ iter ] = new TProfile(From_String_To_Char_Array(name_str),From_String_To_Char_Array(name_str), MuBins.size()-1, MuBins[0], MuBins[ MuBins.size()-1],  0.0,10000.0 );
             if(PT_Dependence_On == "NPV")
                 TProfile_Pt_vs_mu_binned[ iter ] = new TProfile(From_String_To_Char_Array(name_str),From_String_To_Char_Array(name_str), NpvBins.size()-1, NpvBins[0], NpvBins[ NpvBins.size()-1],  0.0,10000.0 );
             TProfile_Pt_vs_mu_binned[ iter ]->Sumw2();
@@ -327,7 +287,7 @@ void Create_TProfiles(){
         Tree->SetBranchAddress("runNumber", &RunNum, &b_RunNum);
         Tree->SetBranchAddress("NPV", &NPV, &b_NPV);
         //recojet_pt->at(j)-pt->at(j)-jet_area->at(j)*rho*0.001
-        for(int ientry=0;ientry<Tree->GetEntries()/100;ientry++){ 
+        for(int ientry=0;ientry<Tree->GetEntries();ientry++){ 
             
             Tree->GetEntry(ientry);
             //rho*=0.001; // RHO  normalization CHANGED_HERE
@@ -359,7 +319,7 @@ void Create_TProfiles(){
                 
                 int iter = ( eta_bin -1 ) + ( EtaBins.size() - 1 )*( pt_bin -1 ) ;
                 int iter_inclusive = ( eta_bin -1 ) + ( EtaBins.size() - 1 )*( PtBins.size() -1 ) ;
-                cout<<"iter: "<<iter<<" ;inclusive: "<< iter_inclusive<<"\n";
+                // cout<<"iter: "<<iter<<" ;inclusive: "<< iter_inclusive<<"\n";
                 // cout<<"eta value: "<< jet_eta->at(jet_iter)<< " | eta bin: "<< eta_bin<<endl;
                 // cout<<"pt value: "<< pt_true->at(jet_iter)<< " | pt bin: "<< pt_bin<<endl;
                 //cout<<"NPV: "<<NPV<< " NPV bin: "<< NPV_bin<<endl;
@@ -402,8 +362,8 @@ void Create_TProfiles(){
                         //cout<<"mu term :"<<MutermAtEta<<"\n";
                         corr1D = NPVtermAtEta*(NPV-1)+MutermAtEta*mu;
                         
-                        cout<<"pt area: "<<pt_area << " pt: "<< pt->at(jet_iter) <<" diff: "<< jet_area->at(jet_iter)*rho<< " true - reco: " <<pt_true->at(jet_iter) <<"\n";
-                        cout<<"corr1D: "<<corr1D<<"\n";
+                        // cout<<"pt area: "<<pt_area << " pt: "<< pt->at(jet_iter) <<" diff: "<< jet_area->at(jet_iter)*rho<< " true - reco: " <<pt_true->at(jet_iter) <<"\n";
+                        // cout<<"corr1D: "<<corr1D<<"\n";
                         if (pt_bin > 0)
                             TProfile_Pt_vs_mu_binned [iter]->Fill( mu, pt_area - corr1D , weight_tot  );
                         // cout<<"check II\n";

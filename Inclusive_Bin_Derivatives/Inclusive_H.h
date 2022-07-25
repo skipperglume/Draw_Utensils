@@ -49,22 +49,27 @@ vector<Int_t> Config_NpvBins = {};
 vector<float> Config_MuBins = {};
 
 // string correction = "None";
-string correction = "Area";
-//string correction = "1D";
+// string correction = "Area";
+string correction = "1D";
+
+// cd Draw_Utensils/Inclusive_Bin_Derivatives && root Create_TProfiles.cxx;
 //string correction = "3D";
 
-// string PT_Dependence_On = "Mu";
-string PT_Dependence_On = "NPV";
+string PT_Dependence_On = "Mu";
+// string PT_Dependence_On = "NPV";
 
 //vector<double> NPVTerm =    {0.025, -0.004, 0.057, -0.036, 0.145, 0.056, 0.479, -0.261, 0.051, 0.326, 0.032, 50951.609};
 //vector<double> MuTerm =     {-0.001, -0.009, -0.020, -0.019, -0.063, -0.068, -0.324, 0.116, -0.055, -0.193, -0.011, -17788.504};
 
 // vector<double> NPVTerm =    {-0.013, 0.007, -0.003, 0.023, -0.087, 0.030, -0.009, -0.016, -0.020, 0.011, 0.316, 2.653};
-    vector<double> NPVTerm = {-0.015 , 0.008 , -0.004 , 0.017 ,  -0.081 , 0.025 , -0.004 , -0.014 , -0.019 , 0.007 , 0.202 , 332222.652}   ;
+// vector<double> NPVTerm = {-0.015 , 0.008 , -0.004 , 0.017 ,  -0.081 , 0.025 , -0.004 , -0.014 , -0.019 , 0.007 , 0.202 , 332222.652}   ;
+// 0.030 0.002 0.067 -0.026 0.076 0.073 0.406 -0.220 0.021 0.344 0.087 0.032
+    vector<double> NPVTerm = {0.135, 0.002, 0.068, -0.029, 0.072, 0.070, 0.407, -0.220, 0.024, 0.349, 0.085, 0.056};
 
 // vector<double> MuTerm =     {-0.009, 0.002, -0.004, -0.002, 0.026, -0.013, -0.000, 0.031, 0.005, -0.019, -0.126, -0.757};
-    vector<double> MuTerm =   {  -0.009 ,  0.001 , -0.004 ,  0.001 , 0.023 , -0.011 , -0.001 , 0.031 , 0.004 , -0.016 , -0.060 , -96384.805};
-
+// vector<double> MuTerm =   {  -0.009 ,  0.001 , -0.004 ,  0.001 , 0.023 , -0.011 , -0.001 , 0.031 , 0.004 , -0.016 , -0.060 , -96384.805};
+// -0.005 -0.008 -0.035 -0.016 -0.050 -0.073 -0.291 0.096 -0.039 -0.205 -0.043 0.028
+    vector<double> MuTerm = {0.046, -0.009, -0.037, -0.015, -0.048, -0.073, -0.288, 0.096, -0.040, -0.206, -0.040, 0.032};
 
 vector<double> ResidualAbsEtaBins = { 0, 0.9, 1.2, 1.5, 1.8, 2.4, 2.8, 3.2, 3.5, 4.0, 4.3, 6.0 };
 
@@ -117,5 +122,61 @@ void Print_Vector_Line(vector<T> &a){
     return;
 }
 
+char * From_String_To_Char_Array( string & name){
+    char * char_name[500];
+    for (int i =0; i < name.size();i++){
+        //cout<<name.at(i);
+        char_name[i] = & name.at(i);
+    }
+    
+    return (*char_name);
+}
+char * FSTCA(string & name){
+    return From_String_To_Char_Array(  name);
+}
+template <typename T , typename Y,  typename U, typename I, typename O> 
+string Create_Name_eta_pt_NPV_mu(string custom, T eta, Y pt, U NPV, I mu, O n, string end = "" ){
+    string out = "";
+    out = custom;
+    out += "_eta_"+to_string((int)(eta));
+    out += "_pt_"+to_string((int)pt);
+    out += "_NPV_"+to_string((int)NPV);
+    out += "_mu_"+to_string((int)mu);
+    out += "_n_"+to_string((int)n);
+    out += end;
+    return out;
+}
+
+
+vector<int> Boundaries_Of_Fit(TProfile & TProf){
+    vector<int> a;
+    cout<< TProf.GetNbinsX()<<endl;
+    cout<< TProf.GetNbinsY()<<endl;
+    int x_min=0;
+    int x_max=0;
+    for (int i =1 ; i < TProf.GetNbinsX()+1; i++) {
+        if ( TProf.GetBinContent( i )>0){
+            if(x_min==0)
+                x_min=i;
+            x_max=i;
+        }
+        cout<< TProf.GetBinContent(i)<<"; ";
+        
+    }
+    
+    cout<<"\n";
+    a.push_back(x_min);
+    a.push_back(x_max);
+    cout<<"First: "<<a[0]<<" Second: "<<a[1]<<"\n";
+    return a;
+
+}
+void Create_Folder(string name){
+
+    string command = "mkdir "+ name;
+    // system(command);
+
+    return;
+}
 #endif
-// cd Draw_Utensils/project_derivative/ && root new_try.cxx
+// cd Draw_Utensils/Inclusive_Bin_Derivatives && root Create_TProfiles.cxx;
