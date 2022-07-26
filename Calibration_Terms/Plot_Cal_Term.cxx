@@ -13,13 +13,16 @@ void Plot_Cal_Term(){
     else if ( Term_Name == "Mu")
         Term_Vec = MuTerm;
     else {cout<<"UNKNOWN TERM\n";return;    }
+    vector<double> offset = computeoffsets(ResidualAbsEtaBins, Term_Vec ) ;
     Print_Vector_Line( ResidualAbsEtaBins );
     Print_Vector_Line( Term_Vec );
+    Print_Vector_Line( offset ) ;
+    
     for ( int i = 0 ; i < ResidualAbsEtaBins.size(); i ++){
-        t_curr = Term_Vec[i]+t_prev;
-        cout<<t_curr<<"\n";
-        Term_Graph->AddPoint(ResidualAbsEtaBins[i], t_curr);
-        t_prev = t_curr ;
+        // t_curr = Term_Vec[i]+t_prev;
+        // cout<<t_curr<<"\n";
+        Term_Graph->AddPoint(ResidualAbsEtaBins[i], offset[i]);
+        // t_prev = t_curr ;
         
     }
 
@@ -34,13 +37,13 @@ void Plot_Cal_Term(){
     Term_Graph->SetMarkerStyle(108);
     Term_Graph->SetMarkerColor(kRed);
     Term_Graph->SetMarkerSize(1.5);
-    Term_Graph->Draw("AP");
+    Term_Graph->Draw("APL");
 
     char * name_to_save = From_String_To_Char_Array("./"+Term_Name+"Term"+".png");
     cout<<name_to_save<<endl;
     c->SaveAs(name_to_save);
-
-
+    
+    
 
     return;
 }
