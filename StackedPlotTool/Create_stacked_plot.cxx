@@ -26,37 +26,10 @@
 
 using namespace std;
 
-bool FindSubString(const string  str, const  string  substr){
-    for(int i = 0; i < str.size(); i++){
-        if(str.size()-i < substr.size())
-            return false;
-        if (substr[0] == str[i]){
-            bool o = true;
-            for(int j = 1; j < substr.size(); j++){
-                if(substr[j]!=str[i+j]){
-                    o = false;
-                    break;
-                }
-            }   
-            if(o){
-                //cout<<i<<"\n";
-                return true;    
-            }
-        }
-        
-    }
-    return false;
-}
 
-template <typename T>
-void Print_Vector_Line(vector<T> &a){
-    cout<<"\n";
-    for(int i=0; i < a.size(); i++){
-        cout<< a[i]<<"; ";
-    }
-    cout<<"\n";
-    return;
-}
+
+
+
 
 
 bool BOOL_exists_file (const string& name) {
@@ -66,15 +39,6 @@ bool BOOL_exists_file (const string& name) {
     } else {
         return false;
     }   
-}
-char * From_String_To_Char_Array( string & name){
-    char * char_name[500];
-    for (int i =0; i < name.size();i++){
-        cout<<name.at(i);
-        char_name[i] = & name.at(i);
-    }
-    
-    return (*char_name);
 }
 
 vector <string> String_Split(const string str, const char delimiter = '/'){
@@ -117,6 +81,7 @@ int Stack_Histi_Index(const vector<string> & vstr, const string path, char delim
 
 void Create_stacked_plot(){
     cout<<"Welcome Aristocrat!"<<endl;
+    Write_Date("Started_"+variable_name+"_"+weight_name);
     string str;
     ifstream infile ;
     vector <string> paths_to_ttrees ;
@@ -168,7 +133,7 @@ void Create_stacked_plot(){
     TH1F * Histo_Stacked [stack_tag.size()];
     for(int i=0;i<stack_tag.size();i++){
         string name = "JZ_"+to_string(i);
-        Histo_Stacked[i] = new TH1F(From_String_To_Char_Array(name),From_String_To_Char_Array(name),25,0.0,50.0);
+        Histo_Stacked[i] = new TH1F(From_String_To_Char_Array(name),From_String_To_Char_Array(name),num_bins , low_value, high_value);
         Histo_Stacked[i]->Sumw2();
     }
     
@@ -189,6 +154,7 @@ void Create_stacked_plot(){
         index = Stack_Histi_Index(stack_tag, paths_to_ttrees[i]);
         cout<<i<<"/"<<paths_to_ttrees.size()<<" : " << index<<endl;
         TTree* Tree = (TTree*) FILE_TO_TTREE->Get("IsolatedJet_tree");
+        cout<<Tree->GetEntries()<<"\n";
         Tree->SetBranchAddress("jet_ConstitPt", &pt, &b_pt);
         Tree->SetBranchAddress("weight_tot", &weight_tot, &b_weight_tot);
         Tree->SetBranchAddress("weight", &weight, &b_weight);
@@ -199,7 +165,7 @@ void Create_stacked_plot(){
         Tree->SetBranchAddress("jet_ActiveArea4vec_pt", &jet_area, &b_jet_area);
         Tree->SetBranchAddress("rho", &rho, &b_rho);
         Tree->SetBranchAddress("NPV", &NPV, &b_NPV);
-        for(int ientry=0;ientry<Tree->GetEntries()/1000;ientry++){ 
+        for(int ientry=0;ientry<Tree->GetEntries();ientry++){ 
             
             Tree->GetEntry(ientry);
             Int_t x_int=0;
@@ -245,16 +211,17 @@ void Create_stacked_plot(){
                     x_double = mu;}
                 else if (variable_name == "constit_pt"){
                     x_double = (Double_t)(pt->at(jet_iter));}
-                // else if (variable_name == "true_pt"){
-                //     x_double = (Double_t)(pt_true->at(jet_iter));}
-                // else if (variable_name == "constit_eta"){
-                //     x_double = (Double_t)(jet_eta->at(jet_iter));}
-                // else if (variable_name == "true_eta"){
-                //     x_double = (Double_t)jet_eta_true->at(jet_iter);}
-                // else if (variable_name == "jet_area"){
-                //     x_double = (Double_t)jet_area->at(jet_iter);}
-                // else if (variable_name == "rho"){
-                //     x_double = (Double_t)rho;}
+                else if (variable_name == "true_pt"){
+                    x_double = (Double_t)(pt_true->at(jet_iter));}
+                else if (variable_name == "constit_eta"){
+                    x_double = (Double_t)(jet_eta->at(jet_iter));}
+                else if (variable_name == "true_eta"){
+                    x_double = (Double_t)jet_eta_true->at(jet_iter);}
+                else if (variable_name == "jet_area"){
+                    x_double = (Double_t)jet_area->at(jet_iter);}
+                else if (variable_name == "rho"){
+                    x_double = (Double_t)rho;}
+                else {cout<<"ERRROR WRONG AR NAME\n";return -1;}
                 
                 if (is_int)
                     Histo_Stacked[index]->Fill(x_int,       wght );
@@ -266,14 +233,15 @@ void Create_stacked_plot(){
                 //pTtrue_weight->Fill(pt[jet_iter],weight);
             /**/
         }
-        cout<<Tree->GetEntries()<<"\n";
+        
         FILE_TO_TTREE->Close();
     }
     
     /**/
 
-    
-    string name = variable_name+"_"+weight_name+"_"+legend_name+"_"+"result.root";
+    string folder_name = "./Created_Stacked_Plots/";
+    Create_Folder(folder_name);
+    string name = folder_name+variable_name+"_"+weight_name+"_"+legend_name+"_"+"result.root";
     TFile * Result = new TFile(From_String_To_Char_Array(name),"recreate");
     for(int i=0;i<stack_tag.size();i++){
         string name = legend_name+"_"+to_string(i);
@@ -281,7 +249,7 @@ void Create_stacked_plot(){
     }
     
     Result->Close();
-    
+    Write_Date("Finished_"+variable_name+"_"+weight_name);
 
 
 }

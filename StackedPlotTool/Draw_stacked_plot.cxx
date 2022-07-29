@@ -27,37 +27,9 @@
 
 using namespace std;
 
-bool FindSubString(const string  str, const  string  substr){
-    for(int i = 0; i < str.size(); i++){
-        if(str.size()-i < substr.size())
-            return false;
-        if (substr[0] == str[i]){
-            bool o = true;
-            for(int j = 1; j < substr.size(); j++){
-                if(substr[j]!=str[i+j]){
-                    o = false;
-                    break;
-                }
-            }   
-            if(o){
-                //cout<<i<<"\n";
-                return true;    
-            }
-        }
-        
-    }
-    return false;
-}
 
-template <typename T>
-void Print_Vector_Line(vector<T> &a){
-    cout<<"\n";
-    for(int i=0; i < a.size(); i++){
-        cout<< a[i]<<"; ";
-    }
-    cout<<"\n";
-    return;
-}
+
+
 
 
 bool BOOL_exists_file (const string& name) {
@@ -68,15 +40,7 @@ bool BOOL_exists_file (const string& name) {
         return false;
     }   
 }
-char * From_String_To_Char_Array( string & name){
-    char * char_name[500];
-    for (int i =0; i < name.size();i++){
-        // cout<<name.at(i);
-        char_name[i] = & name.at(i);
-    }
-    
-    return (*char_name);
-}
+
 
 vector <string> String_Split(const string str, const char delimiter = '/'){
     vector <string> substrings = {};
@@ -138,20 +102,76 @@ vector<float>* Min_Max_Limits(TH1F* histos[], const int size){//
     return a;
 }
 
+string Find_Variable_Name( const string f_str){
+    string var_name = "";
+    vector<string> name_V = { "NPV" , "mu" , "constit_pt" , "true_pt", "rho" , "jet_area" , "constit_eta" , "true_eta", "num_jets" };
+    for ( string strng : name_V  ){
+        var_name = (FindSubString(f_str, strng)) ? strng : "";
+        if (var_name.size()!=0) return var_name;
+    }
+
+    return var_name;
+}
+
+string Find_Weight_Name( const string f_str){
+    string var_name = "";
+    vector<string> name_V = { "tot_weight" , "one" , "weight" , "one_nth" };
+    for ( string strng : name_V  ){
+        var_name = (FindSubString(f_str, strng)) ? strng : "";
+        if (var_name.size()!=0) return var_name;
+    }
+
+    return var_name;
+}
+
+string Get_Main_Name(string path){
+    string name="";
+    int start = -1 ;
+    for (int pos = 0 ; pos < path.size(); pos++ ){
+        start = (path[pos] == '/') ?  pos : start;
+    }
+    for (int pos = start+1 ; pos < path.size(); pos++ ){
+        name += path[pos];
+    }
+    return name;
+}
+
+// weight is:  tot_weight , one , weight , one_nth
 void Draw_stacked_plot(){
     cout<<"Welcome Aristocrat!"<<endl;
 
     
     string str;
     ifstream infile ;
-    vector <string> paths_to_ttrees ;
+    // vector <string> paths_to_ttrees ;
     //infile.open("List_of_ttrees.txt");
     
     const vector<string> stack_tag = {  "364700","364701","364702","364703","364704","364705","364706","364707","364708","364709","364710","364711","364712"}; 
     TH1F * Histo_Stacked [stack_tag.size()];
+    string file_name = "./Created_Stacked_Plots/constit_pt_tot_weight_JZ_result.root";
+    cout<<Get_Main_Name(file_name)<<"\n";
+    TFile * Result = new TFile(FSTCA(file_name),"read");
+    variable_name = Find_Variable_Name(  Get_Main_Name(file_name)  );
+    weight_name = Find_Weight_Name(  Get_Main_Name(file_name)  );
+    cout<<"Variable is: " << variable_name<<endl;
+    cout<<"Weight is: " << weight_name<<endl;
+    
+    /*
+    vector<string> testing_vals = {"constit_eta_tot_weight_JZ_result.root", "mu_tot_weight_JZ_result.root",   "rho_tot_weight_JZ_result.root",
+    "constit_pt_one_JZ_result.root",          "NPV_tot_weight_JZ_result.root",  "true_eta_tot_weight_JZ_result.root",
+    "constit_pt_tot_weight_JZ_result.root",   "num_jets_one_JZ_result.root",    "true_pt_tot_weight_JZ_result.root"};
+    for ( string TEST : testing_vals){
+        cout<< TEST<<"\n";
+        cout<< Find_Variable_Name(  Get_Main_Name(TEST)  )<<"\n";
+        cout<< Find_Weight_Name(  Get_Main_Name(TEST)  )<<"\n";
 
-    TFile * Result = new TFile("/afs/cern.ch/work/d/dtimoshy/RC/mu_one_JZ_result.root","read");
+    }
+    */
+    
 
+
+
+    
     for(int i=0;i<stack_tag.size();i++){
         string name = "JZ_"+to_string(i);
         Histo_Stacked[i] = (TH1F*)Result->Get(From_String_To_Char_Array(name));
@@ -166,7 +186,7 @@ void Draw_stacked_plot(){
     Print_Vector_Line(*a);
     
     
-    TCanvas *cst = new TCanvas("cst","stacked hists",10,10,700,700);
+    TCanvas *cst = new TCanvas("cst","stacked hists",10,10,1100,900);
     cst->SetLogy();
     THStack *hs = new THStack("hs","Stacked 1D histograms");
     cout<<a->at(0)<<"\n"<<endl;
@@ -180,13 +200,16 @@ void Draw_stacked_plot(){
         // Histo_Stacked[i]->SetMarkerStyle(21);
         //Histo_Stacked[i]->SetMarkerColor(kRed);
         Histo_Stacked[i]->SetLineColor( colors[i % colors.size()] );
+        string title_name = variable_name   +" with "+weight_name+" weight " +";"+variable_name+";"+weight_name;
+        Histo_Stacked[i]->SetTitle(  FSTCA(title_name));
         hs->Add(Histo_Stacked[i]);        
     }
     // Histo_Stacked[2]->SetFillColor(2);
     // Histo_Stacked[0]->Draw("bar");
     hs->SetMinimum(a->at(0));
     hs->SetMaximum(a->at(1));
-    hs->SetTitle(From_String_To_Char_Array(histo_title_name));
+    string title_name = variable_name   +" with "+weight_name+" weight " +";"+variable_name+";"+weight_name;
+    hs->SetTitle(FSTCA(title_name));
     hs->Draw("bar");
 
     TLegend* legend = new TLegend(0.8, 0.4, .9, .9);
@@ -203,10 +226,11 @@ void Draw_stacked_plot(){
     // hs->GetYaxis()->SetRangeUser(0.0001, 10.0);
     // hs->GetYaxis()->SetLimits(0.0001, 10.0);
     // cout<<stack_tag.size()<<endl;
+    string folder_name = "./Stacked_Plots/";
+    Create_Folder(folder_name);
+    string canvas_name = folder_name  +variable_name  + "_"+weight_name+"_" +".png";
+    cst->SaveAs(FSTCA(canvas_name));
     
-    cst->SaveAs("stack.png");
-    /*
-    */
     Result->Close();
     
 
