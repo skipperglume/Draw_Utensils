@@ -40,8 +40,8 @@ if "__main__" == __name__:
         img_lst=[image0, image1, image2, image3, image4, image5]
 
     fig = plt.figure(figsize=(20, 20),dpi=500)
-    columns = 3
-    rows = 2
+    columns = 2
+    rows = 3
     for i in range(1, columns*rows +1):
         
         fig.add_subplot(rows, columns, i)
