@@ -1,0 +1,1 @@
+g++ -o Run Response_Control.cxx `root-config --cflags --glibs`
