@@ -1,4 +1,11 @@
 #include "Response_Control_H.h"
+void Response_vs_E_true::Create_Folder(std::string name){
+
+    std::string command = "mkdir "+ name;
+    system(FSTCA(command) );
+
+    return;
+}
 std::string String_Float_Precision(float input, int precision);
 TChain* Response_vs_E_true::Set_Up_TChain(std::string path_to_files,std::string TTree_name){
 
@@ -22,24 +29,24 @@ TChain* Response_vs_E_true::Set_Up_TChain(std::string path_to_files,std::string 
     infile.close();
     return ch_p;
 }
-float Reco_Factor(float pt,float eta,float area , float rho , float mu, int NPV){
+float Response_vs_E_true::Reco_Factor(float pt,float eta,float area , float rho , float mu, int NPV){
     return 1.0;
 }
-float Area_Factor(float pt,float eta,float area , float rho , float mu, int NPV){
+float Response_vs_E_true::Area_Factor(float pt,float eta,float area , float rho , float mu, int NPV){
     return (pt- area*rho)/pt;
 }
-float 1D_Factor(float pt,float eta,float area , float rho , float mu, int NPV){
-    return 1;
-}
-void Response_vs_E_true::Response_Control( std::string path_to_files, std::string TTree_name = "IsolatedJet_tree", int increment = 1,   std::string Step = "Area",float eta_min = -4.5, float eta_max = 4.5){
+// float 1D_Factor(float pt,float eta,float area , float rho , float mu, int NPV){
+//     return 1;
+// }
+void Response_vs_E_true::Response_Control( std::string path_to_files, std::string TTree_name = "IsolatedJet_tree", int increment = 1,   std::string Step = "Area",float eta_min = -4.5, float eta_max = 4.5, std::string LegendName = "NoJetCal"){
     if (increment < 0 ) {std::cout<<"Increment is less than 0"; return ;}
 
-    float (*Factor)(float pt,float eta,float area , float rho , float mu, int NPV);
+    float (Response_vs_E_true::*Factor)(float pt,float eta,float area , float rho , float mu, int NPV);
     if (Step == "Reco"){
-        Factor = &Reco_Factor;
+        Factor = &Response_vs_E_true::Reco_Factor;
     }
     else if (Step == "Area"){
-        Factor = &Area_Factor;
+        Factor = &Response_vs_E_true::Area_Factor;
     }
 
     // std::string path_to_files = "./partial_mc20a.txt";
@@ -54,7 +61,7 @@ void Response_vs_E_true::Response_Control( std::string path_to_files, std::strin
     ch->SetBranchAddress("NPV", &NPV, &b_NPV);
     // ch->SetBranchAddress("R_weight", &weight_tot, &b_weight_tot);
     // ch->SetBranchAddress("weight_tot", &weight_tot, &b_weight_tot);
-    ch->SetBranchAddress("R_weight", &weight_tot, &b_weight_tot);
+    ch->SetBranchAddress("weight", &weight_tot, &b_weight_tot);
     ch->SetBranchAddress("actualInteractionsPerCrossing", &mu, &b_mu);
 
     ch->SetBranchAddress("jet_ConstitPt", &pt, &b_pt);
@@ -94,10 +101,10 @@ void Response_vs_E_true::Response_Control( std::string path_to_files, std::strin
             R_vs_E_true->Fill(jet_true_E->at(jet_iter) , jet_E->at(jet_iter) / jet_true_E->at(jet_iter) , weight_tot);
             // float f = correctionFactor(pt->at(jet_iter),jet_eta->at(jet_iter),jet_area->at(jet_iter),rho,mu, NPV);
             float f ;
-            f = (*Factor)(pt->at(jet_iter),jet_eta->at(jet_iter),jet_area->at(jet_iter),rho,mu, NPV);
+            f = (*this.*Factor)(pt->at(jet_iter),jet_eta->at(jet_iter),jet_area->at(jet_iter),rho,mu, NPV);
             if ( jet_eta->at(jet_iter)  > eta_min && jet_eta->at(jet_iter)  < eta_max)
                 R_vs_E_true->Fill(jet_true_E->at(jet_iter) ,  f* jet_E->at(jet_iter) / jet_true_E->at(jet_iter) , weight_tot);
-            std::cout<< f<<"\n";
+            // std::cout<< f<<"\n";
 
         }
 
@@ -112,17 +119,23 @@ void Response_vs_E_true::Response_Control( std::string path_to_files, std::strin
     }
     
     std::cout<<  100<<"%\n";
-    TCanvas * tc = new TCanvas("canvas_to_save","canvas_to_save",2400,1600);
+    TCanvas * tc = new TCanvas("canvas_to_save","canvas_to_save",2800,1600);
     // gROOT->SetStyle("Plain");
 	// gStyle->SetOptFit(11111);
     // gStyle->SetOptStat(0);
     // gStyle->SetTitleFontSize(0.02);
     gROOT->SetStyle("ATLAS");
     gPad->SetLogx(1);
-    std::string Histo_name = "Plot;E^{true}, #eta in ["+String_Float_Precision(eta_min,1)+":"+String_Float_Precision(eta_max,1)+  "];Response, f";
+    std::string Histo_name = "Plot;E^{true}, #eta in ["+String_Float_Precision(eta_min,1)+":"+String_Float_Precision(eta_max,1)+  "];Response, "+Step+", "+LegendName;
     R_vs_E_true->SetTitle(FSTCA(Histo_name));
+    
+    
+    
     R_vs_E_true->Draw("COLZ ");
-    tc->SaveAs("test.png");
+    std::string SaveName = "Plots";
+    Create_Folder(FSTCA(SaveName));
+    SaveName+="/"+LegendName+"_"+Step+"_"+String_Float_Precision(eta_min,1)+"_"+String_Float_Precision(eta_max,1)+".png";
+    tc->SaveAs(FSTCA(SaveName));
     std::cout<< "\n Numbers of reco jets: "<<N_Jets<<"\n";
     std::cout<< "\n Numbers of reco jets: "<<N_Jets_reco<<"\n";
     std::cout<< "\n Numbers of truth jets: "<<N_Jets_true<<"\n";
@@ -133,21 +146,32 @@ void Response_vs_E_true::Response_Control( std::string path_to_files, std::strin
 
 // ./Run "partial_mc20a.txt" "IsolatedJet_tree" 3000
 
-
+//  partial_mc20a.txt  "IsolatedJet_tree" 1 "Area" -4.5  4.5
 //  g++ -o Run Response_Control.cxx `root-config --cflags --glibs` && ./Run "partial_mc20a.txt" "IsolatedJet_tree" 3000
+// g++ -o Run Response_Control.cxx `root-config --cflags --glibs` && ./Run "partion_With_Jet_Calibrator.txt" "IsolatedJet_tree" 3000
+// g++ -o Run Response_Control.cxx `root-config --cflags --glibs` && ./Run "partion_WOUT_Jet_Calibrator.txt" "IsolatedJet_tree" 3000
+// ./Run "partion_With_Jet_Calibrator.txt" "IsolatedJet_tree" "3000" "Reco" "-4.5" "4.5" "JetCal"
+// ./Run "partion_WOUT_Jet_Calibrator.txt" "IsolatedJet_tree" "3000" "Reco" "-4.5" "4.5" "NoJetCal"
 int main ( int argc ,char* argv[] ){
     std::cout << "+I+\n";
-    
+    // path_to_files TTree_name increment Step eta_min eta_max LegendName
     // std::string input = argv[3];
     std::string input_1 = argv[1];
     std::string input_2 = argv[2];
     int increment = std::stoi(argv[3]);
+    std::string input_3 = argv[4];
+    float upper_limit = std::stof(argv[5]);
+    float lower_limit = std::stof(argv[6]);
+    std::string input_4 = argv[7];
+
     std::cout<<argc <<" \n";
+
     Response_vs_E_true * h = new Response_vs_E_true( );
-    h->Response_Control(input_1 , input_2 ,increment);
+    h->Response_Control(input_1 , input_2 ,increment, input_3, upper_limit, lower_limit, input_4);
+    
     delete h;
     /**/
-    std::cout<< String_Float_Precision(4.5,3)<<std::endl;
+    std::cout<<__cplusplus<<std::endl;
     return 0;
 }
 
