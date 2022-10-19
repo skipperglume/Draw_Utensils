@@ -18,11 +18,12 @@ TChain* Response_vs_E_true::Set_Up_TChain(std::string path_to_files,std::string 
     while(!infile.eof()){
         getline(infile,str);
         // paths_to_ttrees.push_back(str);
-        if(is_file_exist(FSTCA(str))){
+        if(is_file_exist(FSTCA(str)) && str != ""){
             std::cout<<"FILE EXISTS: "<<str<<"\n\n";
             ch_p->Add(FSTCA(str));
         }
-        else { std::cout<<"ERROR FILE DOES NOT EXIST: "<<str<<"\n\n"; 
+        else {if (str != "" ) std::cout<<"ERROR FILE DOES NOT EXIST: "<<str<<"\n\n"; 
+         
         }
             
     }
@@ -47,6 +48,9 @@ void Response_vs_E_true::Response_Control( std::string path_to_files, std::strin
     }
     else if (Step == "Area"){
         Factor = &Response_vs_E_true::Area_Factor;
+    }
+    else if (Step == "1D"){
+        Factor = &Response_vs_E_true::correctionFactor;
     }
 
     // std::string path_to_files = "./partial_mc20a.txt";
