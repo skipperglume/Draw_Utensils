@@ -39,9 +39,9 @@ float Response_vs_E_true::Area_Factor(float pt,float eta,float area , float rho 
 // float 1D_Factor(float pt,float eta,float area , float rho , float mu, int NPV){
 //     return 1;
 // }
-void Response_vs_E_true::Response_Control( std::string path_to_files, std::string TTree_name = "IsolatedJet_tree", int increment = 1,   std::string Step = "Area",float eta_min = -4.5, float eta_max = 4.5, std::string LegendName = "NoJetCal"){
-    if (increment < 0 ) {std::cout<<"Increment is less than 0"; return ;}
-
+void Response_vs_E_true::Response_Control( std::string path_to_files, std::string TTree_name = "IsolatedJet_tree", int increment = 1,   std::string Step = "Area",float eta_min = -4.5, float eta_max = 4.5, std::string LegendName = "NoJetCal", int Num_Leading_Jets = 1){
+    if (increment < 0 ) {std::cout<<"ERROR: Increment is less than 0"; return ;}
+    if (Num_Leading_Jets == 0  || Num_Leading_Jets < -1 ){std::cout<<"ERROR: Number of Leading jets is incorrect"; return ;}
     float (Response_vs_E_true::*Factor)(float pt,float eta,float area , float rho , float mu, int NPV);
     if (Step == "Reco"){
         Factor = &Response_vs_E_true::Reco_Factor;
@@ -91,6 +91,7 @@ void Response_vs_E_true::Response_Control( std::string path_to_files, std::strin
 
 
     /**/
+    
     for(auto ientry = 0; ientry < N_Entries; ientry+=increment){ //Loop on entries
         ch->GetEntry(ientry);
         // for(int i =0 ; i < (*pt).size();i++){
@@ -101,22 +102,44 @@ void Response_vs_E_true::Response_Control( std::string path_to_files, std::strin
         // cout<<(*jet_eta).size()<<" ";
         // cout<<NPV<<"\n";
         // result->Fill(jet_true_E->at(0),jet_E->at(0)/jet_true_E->at(0)  , weight_tot );
-        for(int jet_iter=0; jet_iter < jet_true_E->size(); jet_iter++){
+        if ( Num_Leading_Jets == -1 )
+        {
+            for(int jet_iter=0; jet_iter < jet_true_E->size(); jet_iter++){
             R_vs_E_true->Fill(jet_true_E->at(jet_iter) , jet_E->at(jet_iter) / jet_true_E->at(jet_iter) , weight_tot);
             // float f = correctionFactor(pt->at(jet_iter),jet_eta->at(jet_iter),jet_area->at(jet_iter),rho,mu, NPV);
             float f ;
             f = (*this.*Factor)(pt->at(jet_iter),jet_eta->at(jet_iter),jet_area->at(jet_iter),rho,mu, NPV);
-            if ( jet_eta->at(jet_iter)  > eta_min && jet_eta->at(jet_iter)  < eta_max)
+            if ( jet_eta->at(jet_iter)  > eta_min && jet_eta->at(jet_iter)  < eta_max){
                 R_vs_E_true->Fill(jet_true_E->at(jet_iter) ,  f* jet_E->at(jet_iter) / jet_true_E->at(jet_iter) , weight_tot);
-            // std::cout<< f<<"\n";
-
+            }
+                
+            }
+            N_Jets_reco+=pt->size();
+            N_Jets_true+=jet_true_E->size();
+            Total_Weight+=weight_tot*pt->size();
+            N_Jets+=njet;
         }
+        else if (Num_Leading_Jets > 0 && jet_true_E->size() >= Num_Leading_Jets)
+        {
+            for(int jet_iter=0; jet_iter < Num_Leading_Jets; jet_iter++){
+            R_vs_E_true->Fill(jet_true_E->at(jet_iter) , jet_E->at(jet_iter) / jet_true_E->at(jet_iter) , weight_tot);
+            // float f = correctionFactor(pt->at(jet_iter),jet_eta->at(jet_iter),jet_area->at(jet_iter),rho,mu, NPV);
+            float f ;
+            f = (*this.*Factor)(pt->at(jet_iter),jet_eta->at(jet_iter),jet_area->at(jet_iter),rho,mu, NPV);
+            if ( jet_eta->at(jet_iter)  > eta_min && jet_eta->at(jet_iter)  < eta_max){
+                R_vs_E_true->Fill(jet_true_E->at(jet_iter) ,  f* jet_E->at(jet_iter) / jet_true_E->at(jet_iter) , weight_tot);
+            }
+                
+            }
+            N_Jets_reco+=Num_Leading_Jets;
+            N_Jets_true+=Num_Leading_Jets;
+            Total_Weight+=weight_tot*Num_Leading_Jets;
+            N_Jets+=njet;
+        }
+        
 
 
-        N_Jets_reco+=pt->size();
-        N_Jets_true+=jet_true_E->size();
-        Total_Weight+=weight_tot*pt->size();
-        N_Jets+=njet;
+        
 
         if(ientry %100000==0) std::cout<< ((float) ientry / (float)N_Entries)* 100.0<<"%\n";
 
@@ -167,11 +190,13 @@ int main ( int argc ,char* argv[] ){
     float upper_limit = std::stof(argv[5]);
     float lower_limit = std::stof(argv[6]);
     std::string input_4 = argv[7];
-
+    
+    
+    int Num_Leading_Jets = std::stoi(argv[8]);
     std::cout<<argc <<" \n";
 
     Response_vs_E_true * h = new Response_vs_E_true( );
-    h->Response_Control(input_1 , input_2 ,increment, input_3, upper_limit, lower_limit, input_4);
+    h->Response_Control(input_1 , input_2 ,increment, input_3, upper_limit, lower_limit, input_4 , Num_Leading_Jets);
     
     delete h;
     /**/
