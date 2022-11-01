@@ -122,15 +122,15 @@ void Response_vs_E_true::Response_Control( std::string path_to_files, std::strin
         {
             for(int jet_iter=0; jet_iter < Num_Leading_Jets; jet_iter++){
             
-            float f ;
-            f = (*this.*Factor)(pt->at(jet_iter),jet_eta->at(jet_iter),jet_area->at(jet_iter),rho,mu, NPV);
-            if ( jet_eta->at(jet_iter)  > eta_min && jet_eta->at(jet_iter)  < eta_max){
-                R_vs_E_true->Fill(jet_true_E->at(jet_iter) ,  f* jet_E->at(jet_iter) / jet_true_E->at(jet_iter) , weight_tot);
-                N_Jets_reco+=Num_Leading_Jets;
-                N_Jets_true+=Num_Leading_Jets;
-                Total_Weight+=weight_tot*Num_Leading_Jets;
-                N_Jets+=Num_Leading_Jets;
-            }
+                float f ;
+                f = (*this.*Factor)(pt->at(jet_iter),jet_eta->at(jet_iter),jet_area->at(jet_iter),rho,mu, NPV);
+                if ( jet_eta->at(jet_iter)  > eta_min && jet_eta->at(jet_iter)  < eta_max){
+                    R_vs_E_true->Fill(jet_true_E->at(jet_iter) ,  f* jet_E->at(jet_iter) / jet_true_E->at(jet_iter) , weight_tot);
+                    N_Jets_reco+=Num_Leading_Jets;
+                    N_Jets_true+=Num_Leading_Jets;
+                    Total_Weight+=weight_tot*Num_Leading_Jets;
+                    N_Jets+=Num_Leading_Jets;
+                }
                 
             }
             
@@ -152,7 +152,14 @@ void Response_vs_E_true::Response_Control( std::string path_to_files, std::strin
     // gStyle->SetTitleFontSize(0.02);
     gROOT->SetStyle("ATLAS");
     gPad->SetLogx(1);
-    std::string Histo_name = "Plot;E^{true}, #eta in ["+String_Float_Precision(eta_min,1)+":"+String_Float_Precision(eta_max,1)+  "];Response, "+Step+", "+LegendName;
+    std::string Histo_name = "Plot;E^{true}, #eta in ["+String_Float_Precision(eta_min,1)+":"+String_Float_Precision(eta_max,1)+  "];Response, "+Step+", ";
+    if ( Num_Leading_Jets == -1){
+        Histo_name += "all jets, ";
+    }
+    else {
+        Histo_name += "lead "+std::to_string(Num_Leading_Jets)+", ";
+    }
+    Histo_name += LegendName;
     R_vs_E_true->SetTitle(FSTCA(Histo_name));
     
     
