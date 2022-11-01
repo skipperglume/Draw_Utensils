@@ -41,6 +41,7 @@ float Response_vs_E_true::Area_Factor(float pt,float eta,float area , float rho 
 // }
 void Response_vs_E_true::Response_Control( std::string path_to_files, std::string TTree_name = "IsolatedJet_tree", int increment = 1,   std::string Step = "Area",float eta_min = -4.5, float eta_max = 4.5, std::string LegendName = "NoJetCal", int Num_Leading_Jets = 1){
     if (increment < 0 ) {std::cout<<"ERROR: Increment is less than 0"; return ;}
+    if ( eta_max < eta_min ) {std::cout<<"ERROR: Check Eta ranges"; return ;}
     if (Num_Leading_Jets == 0  || Num_Leading_Jets < -1 ){std::cout<<"ERROR: Number of Leading jets is incorrect"; return ;}
     float (Response_vs_E_true::*Factor)(float pt,float eta,float area , float rho , float mu, int NPV);
     if (Step == "Reco"){
