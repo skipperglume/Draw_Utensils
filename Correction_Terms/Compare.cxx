@@ -64,7 +64,7 @@ void Compare(){
     //  -0.001 -0.009 -0.041 -0.006 -0.059 -0.074 -0.284 0.095 -0.033 -0.194 -0.044 0.029
 
     
-    
+    // Paste Here strig from NPV and Mu corr  file produced via Pablo
     if (Term_Name == "Mu" ){
         // UFO MC20a
         // Term1 = FSTDV(" -0.017 -0.011 -0.039 -0.012 -0.055 -0.087 -0.316 0.122 -0.057 -0.229 -0.012 0.225");
