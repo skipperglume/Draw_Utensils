@@ -13,7 +13,6 @@
 #include <utility>
 #include <fstream>
 
-// using namespace std;
 char * FSTCA(std::string & name);
 void Create_Folder(std::string name){
 

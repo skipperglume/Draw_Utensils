@@ -32,12 +32,12 @@ bool is_file_exist(const char *fileName)
 }
 
 
-TChain* Set_Up_TChain(string path_to_files,string TTree_name, TChain* ch_p){
+TChain* Set_Up_TChain(std::string path_to_files,std::string TTree_name, TChain* ch_p){
 
     
 
-    string str;
-    ifstream infile ;
+    std::string str;
+    std::ifstream infile ;
     // vector <string> paths_to_ttrees ;
     infile.open(FSTCA(path_to_files));
     while(!infile.eof()){
@@ -54,10 +54,12 @@ TChain* Set_Up_TChain(string path_to_files,string TTree_name, TChain* ch_p){
     infile.close();
     return ch_p;
 }
-// mc20a: Enrtries: 215258386 | 215258386 ; N Jets: 58213383
+// mc20a: Enrtries: 215258386 | 215258386 ; N Jets: 58213383 
 // mc20d Enrtries: 
 // mc20e Enrtries: 
 
+// mc16a: Enrtries: 470634624 | 470634624 ; N Jets: 58213383 
+// 470634624
 // TH2D* TH2D_res_vs_E(TChain* ch ){
 
 
@@ -66,7 +68,7 @@ TChain* Set_Up_TChain(string path_to_files,string TTree_name, TChain* ch_p){
     
 // }
 std::vector<double> ComputeOffsets(std::vector<double> etaBins, std::vector<double> term)  {
-        vector<double> offset;
+        std::vector<double> offset;
         offset.push_back(term.at(0));  
         for(unsigned int i=1; i<etaBins.size();++i){
             double espace = etaBins.at(i)-etaBins.at(i-1);
@@ -88,7 +90,7 @@ double Interpolation (std::vector<double> etaBins, std::vector<double> term, std
         return correction;      
     }
     
-float correction1D(float pt, float eta , float mu, float NPV, vector<double> &NPVTerm,vector<double> &MuTerm,vector<double> &ResidualAbsEtaBins )  {
+float correction1D(float pt, float eta , float mu, float NPV, std::vector<double> &NPVTerm,std::vector<double> &MuTerm,std::vector<double> &ResidualAbsEtaBins )  {
         std::vector<double> NPVoffset;
         std::vector<double> Muoffset;           
         Double_t corr1D = 0.0;
@@ -102,7 +104,7 @@ float correction1D(float pt, float eta , float mu, float NPV, vector<double> &NP
 
     }
     
-float correctedPt1D(float pt, float eta, float area, float rho, float mu, float NPV, vector<double> &NPVTerm,vector<double> &MuTerm,vector<double> &ResidualAbsEtaBins   )  {
+float correctedPt1D(float pt, float eta, float area, float rho, float mu, float NPV, std::vector<double> &NPVTerm,std::vector<double> &MuTerm,std::vector<double> &ResidualAbsEtaBins   )  {
       float areaCorr; 
       areaCorr = area*rho*1.0;
             
@@ -110,7 +112,7 @@ float correctedPt1D(float pt, float eta, float area, float rho, float mu, float 
 
       return pt - areaCorr - calibration1D;      
     }
-float correctionFactor1D(const float pt, const  float eta, const  float area, const  float rho, const  float mu, const  float NPV, vector<double> &NPVTerm,vector<double> &MuTerm,vector<double> &ResidualAbsEtaBins)  {
+float correctionFactor1D(const float pt, const  float eta, const  float area, const  float rho, const  float mu, const  float NPV, std::vector<double> &NPVTerm,std::vector<double> &MuTerm,std::vector<double> &ResidualAbsEtaBins)  {
       //std::cout<<"m_useRho = "<<m_useRho<<std::endl;
       // std::cout<<"1D\n";
       
@@ -142,12 +144,12 @@ void Response_vs_E_true(){
     TBranch* b_jet_area;
     TBranch* b_jet_true_E;
     TBranch* b_rho;   
-    vector<float> *pt = 0;
-    vector<float> *jet_eta; //jet eta
-    vector<float>* pt_true;
-    vector<float>* jet_area;
-    vector<float> *jet_E;
-    vector<float> *jet_true_E;
+    std::vector<float> *pt = 0;
+    std::vector<float> *jet_eta; //jet eta
+    std::vector<float>* pt_true;
+    std::vector<float>* jet_area;
+    std::vector<float> *jet_E;
+    std::vector<float> *jet_true_E;
     Int_t           NPV;
     Float_t         mu;
     Double_t        weight_tot;

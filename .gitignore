@@ -24,9 +24,10 @@ build/
 secrets.json
 credentials.json
 
-# Ignore plots and root files
+# Ignore plots and root files and path to root file
 *.png
 *.root
+*.txt
 
 # Ignore compiled binaries or executables
 *.exe
