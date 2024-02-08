@@ -1,0 +1,49 @@
+# Ignore node_modules directory
+node_modules/
+
+# Ignore build artifacts
+dist/
+build/
+
+# Ignore IDE and editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Ignore logs and temporary files
+*.log
+*.tmp
+
+# Ignore environment-specific files
+.env
+.env.local
+.env.*.local
+
+# Ignore sensitive or personal information
+secrets.json
+credentials.json
+
+# Ignore plots and root files
+*.png
+*.root
+
+# Ignore compiled binaries or executables
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Ignore package lock files
+package-lock.json
+yarn.lock
+
+# Ignore macOS specific files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Ignore backup files
+*~
+*.bak
+*.swp
