@@ -516,7 +516,8 @@ def plotStackedPlots(plotsFile, sName, vNames, wNames,  vBins):
 
 if __name__ == '__main__':
     outName = 'output.root'
-    outName = mainScript( 'MC23a_UFOCSSK_7GeV_TEST.txt', 'output.root' )
+    inName = 'MC23a_UFOCSSK_7GeV.txt'
+    outName = mainScript( inName, outName )
     plotStackedPlots(outName, sliceTag, variableNames1DHisto, weight_name, varBinning)
     exit(0)
 
