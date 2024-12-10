@@ -8,7 +8,21 @@ import pickle
 from PlotSetting import plotSettings, labels
 
 folderName = 'stackedPlots'
-sliceTag = ["801165","801166","801167","801168","801169","801170","801171","801172","801173","801174"]
+sliceTag = [
+# '801165',
+'801166',
+'801167',
+'801168',
+'801169',
+'801170',
+'801171',
+'801172',
+'801173',
+'801174',
+]
+
+
+
 variableNames1DHisto = set()
 variableNames1DHisto.add('mu')
 variableNames1DHisto.add('NPV')
@@ -44,6 +58,10 @@ variableNames1DHisto.add('eta_diff_1')
 variableNames1DHisto.add('eta_diff_2')
 variableNames1DHisto.add('eta_diff_3')
 
+
+# TODO: Add the following variables:
+# Delta R between leading reco and true jet
+# Delta Phi between leading reco and true jet
 
 # reco_eta_pos_1
 # reco_eta_pos_2
@@ -417,7 +435,7 @@ def traverseTree(fName, tName, histos, kwargs, args):
 
     tillEvent = nEntries
     if args.test:
-        tillEvent = min( int(nEntries/10),nEntries)
+        tillEvent = min( int(nEntries/1000),nEntries)
 
     for ievt in range(tillEvent):
         tree.GetEntry(ievt)
@@ -492,13 +510,10 @@ def labelPresenceForPlotting(variableNames, labelDict):
     for var in variableNames:
         if not var in labelDict:
             missingLabels.append(var)
-            print(f'Warning: \"{var}\" not found in labelDict')
-            print('Add the label for this variable in labelDict')
-            
 
     return missingLabels
 
-def plotStack(histList, vName, wName, vBin):
+def plotHistStack(histList, vName, wName, varBinning, args):
     '''
     This method plots the stacked histograms for each variable, weight, and slice.
     '''
@@ -508,14 +523,17 @@ def plotStack(histList, vName, wName, vBin):
     
     xAxisNameDict = labels['xAxisNames']
     
+    variableName = varNameDict.get(vName, f'PLACE_HOLDER for {vName}')
+    weightName = weightNameDict.get(wName, f'PLACE_HOLDER for {wName}')
+    xAxisTitle = xAxisNameDict.get(vName, f'PLACE_HOLDER for {vName}')
     pltSttngs = plotSettings({
-        'vName' : varNameDict.get(vName, f'PLACE_HOLDER for {vName}'),
-        'wName' : weightNameDict.get(wName, f'PLACE_HOLDER for {wName}'),
-        'vBin' : vBin,
+        'vName' : variableName,
+        'wName' : weightName,
+        'vBin' : varBinning,
         'jzName' : 'All JZ',
-        'xaxis' : xAxisNameDict.get(vName, f'PLACE_HOLDER for {vName}'),
-        'yaxis' : weightNameDict.get(wName, f'PLACE_HOLDER for {wName}'),
-        'title' : f'{vName} with {wName}'
+        'xaxis' : xAxisTitle,
+        'yaxis' : weightName,
+        'title' : f'{variableName} with {weightName}'
     })
 
     canvas = ROOT.TCanvas(f'{vName}_{wName}', f'{vName}_{wName}', 1000, 800)
@@ -549,9 +567,11 @@ def plotStack(histList, vName, wName, vBin):
     # Find the minimum and maximum values to display:
     minValueToDisplay = min(minValueList)
     maxValueToDisplay = sum(maxValueList)
-    print(f'minValueToDisplay for: {vName} with {wName}', minValueToDisplay)
-    print(f'maxValueToDisplay for: {vName} with {wName}', maxValueToDisplay)
-    minValueToDisplay = min(minValueToDisplay, 0.01)
+    if args.debug: 
+        print('===========================================')
+        print(f'minValueToDisplay for: {vName} with {wName}', minValueToDisplay)
+        print(f'maxValueToDisplay for: {vName} with {wName}', maxValueToDisplay)
+    minValueToDisplay = min(minValueToDisplay, 0.001)
     # Here we plotting the histogram in reverse order 
     for sTag in sliceTag[::-1]:
         histName = vName + "_" + wName + "_" + sTag
@@ -567,7 +587,7 @@ def plotStack(histList, vName, wName, vBin):
 
     thstacked.SetMinimum(minValueToDisplay)
     thstacked.SetMaximum(maxValueToDisplay)
-    print('Title:',pltSttngs.getTitle())
+    print('Title:', pltSttngs.getTitle())
     thstacked.SetTitle(pltSttngs.getTitle())
     thstacked.Draw()
     legend.Draw()
@@ -577,7 +597,7 @@ def plotStack(histList, vName, wName, vBin):
     canvas.SaveAs(f'{folderName}/{getDateSubstring()}/{wName}/{vName}_{wName}.png')
     return None
 
-def plotStackedPlots(plotsFile, sName, vNames, wNames,  vBins):
+def plotStackedPlots(plotsFile, sName, vNames, wNames,  vBins, args):
     folderNames = set()
     for x in uproot.open(plotsFile).keys():
         folderNames.add(x.split('/')[0].split(';')[0])
@@ -599,61 +619,99 @@ def plotStackedPlots(plotsFile, sName, vNames, wNames,  vBins):
                 histos[nameTag].SetDirectory(0)
             # print('===========================================')
             # print(histos)
-            plotStack(histos, v, w, vBins.get(v, [100, 0, 100]))
-            print('===========================================')
+            plotHistStack(histos, v, w, vBins.get(v, [100, 0, 100]), args)
             mother = subDir.GetMotherDir()
             mother.cd()
     outFile.Close()
     return
 
+def checkInputFileExistence(files:list)->bool:
+    '''
+    Simple method to check presence of input files.
+    '''
+    if len(files) == 0 :
+        print('ERROR: file list is empty!')
+        exit(1)
+        
+    missingFiles = []
+    
+    for fileName in files:
+        fileName = fileName.strip()
+        if not os.path.exists(fileName):
+            print(f'Warning: file is missing: [{fileName}]')
+            missingFiles.append(fileName)
+    
+    if len(missingFiles) == 0: 
+        print('All files are present!')
+        return True
+    
+    if len(missingFiles) == len(files): 
+        print('ERROR: All files are missing!')
+        exit(1)
+    
+    if len(missingFiles) > 0: 
+        print('Warning: following files are missing:')
+        for fileName in missingFiles:
+            print(fileName)
+        return False
+    
+    return False
 
 if __name__ == '__main__':
 
     parser=argparse.ArgumentParser()
     parser.add_argument('-i', '--inloc', default='/home/timoshyd/RAC_4tops_analysis/ntuples/v06_BDT_SPANET_Input/nom', type=str, help='Input file location.')
-    parser.add_argument('-r', '--reconstruction', default='t1(b,q1,q2)|t2(b,q1,q2)|t3(b,q1,q2)|t4(b,q1,q2)', type=str, help='Topology of underlying event.')
-    parser.add_argument('-t', '--topo', default='tttt', type=str, help='Topology of underlying event.')
     parser.add_argument('-o', '--outloc', default='/home/timoshyd/spanet4Top/ntuples/four_top_SPANET_input/plotbook/four_top_SPANET_input', type=str, help='Output location. File type of .h5 will be added automatically.')
+    parser.add_argument('-r', '--reconstruction', default='j1()|j2()', type=str, help='Topology of underlying event.')
+    parser.add_argument('-t', '--topo', default='jj', type=str, help='Topology of underlying event.')
     parser.add_argument('-m', '--maxjets', default=15, type=int, help='Max number of jets.')
     parser.add_argument('-tr', '--treename', default='IsolatedJet_tree', type=str, help='Name of nominal tree.')
     parser.add_argument('-b', '--btag', type=str, default='DL1r', help='Which btag alg to use.')
     parser.add_argument('--test', action='store_true', help='Test the code.')
-    parser.add_argument('--debug', action='store_true', help='Print out info.')
-    parser.add_argument('--tag',default='_8JETS', help='Suffix to differentiate files.')
+    parser.add_argument('--debug', action='store_true', help='Print out info. Use when need to develop new functionality.')
+    parser.add_argument('--tag',default='_MC23d', help='Suffix to differentiate files.')
     parser.add_argument('--ignoreCuts', action='store_true', help='Ignore the cuts. Used to produced dataset for prediction.')
-    parser.add_argument('--saveSize', default=365, type=int, help='Amount of events collected needed to save the progress.')
-    parser.add_argument('--plotOnly', action='store_true', help='To plot already produced histograms.')
+    parser.add_argument('-plot', '--plotOnly', action='store_true', help='To plot already produced histograms.')
 
     args = parser.parse_args()
 
     outName = 'output.root'
-    inName = 'MC23d_UFOCSSK_7GeV.txt'
+    inName = 'MC23a_PFlow.txt'
 
-    print(glob.glob('/eos/user/d/dtimoshy/MC23_CSSKUFO_7GeV/MC23d/MC23d_*/*.root'))
-    print(glob.glob('/eos/user/d/dtimoshy/MC23_CSSKUFO_7GeV/MC23d/MC23d_*/*.root')[0])
-    print(glob.glob('/eos/user/d/dtimoshy/MC23_CSSKUFO_7GeV/MC23d/MC23d_*/*.root')[1])
+    # print(glob.glob('/eos/user/d/dtimoshy/MC23_CSSKUFO_7GeV/MC23d/MC23d_*/*.root'))
+    # print(glob.glob('/eos/user/d/dtimoshy/MC23_CSSKUFO_7GeV/MC23d/MC23d_*/*.root')[0])
+    # print(glob.glob('/eos/user/d/dtimoshy/MC23_CSSKUFO_7GeV/MC23d/MC23d_*/*.root')[1])
 
     inputFilesBySlice = {}
 
     for slce in sliceTag:
         print(slce)
-    # exit(0)
+
+    # Get files to process:
+    files = getFilesFromFile(f'{inName}')
+    
+    print(f'Found files: {len(files)}')
+    
+    if not checkInputFileExistence(files):
+        exit(1)
+
+    exit(0)
     if not args.plotOnly:
         outName = mainScript( inName, outName, args )
 
+    # Check the presence of the variable names and x-labels for plotting:
     missingVarNames = labelPresenceForPlotting(variableNames1DHisto, labels['varNames'])    
-    missingxAxisNames = labelPresenceForPlotting(variableNames1DHisto, labels['xAxisNames'])    
-    
     if len(missingVarNames) > 0:
         print('Warning: Missing variable names for plotting:')
         print(missingVarNames)
     
+    missingxAxisNames = labelPresenceForPlotting(variableNames1DHisto, labels['xAxisNames'])    
     if len(missingxAxisNames) > 0:
         print('Warning: Missing Axis variable names for plotting:')
         print(missingxAxisNames)
 
     print('Plotting:')
-    plotStackedPlots(outName, sliceTag, variableNames1DHisto, weight_name, varBinning)
+    plotStackedPlots(outName, sliceTag, variableNames1DHisto, weight_name, varBinning, args)
     exit(0)
 
     exit(0)
@@ -672,3 +730,4 @@ if __name__ == '__main__':
     except:
         os.system(f'ls -lh {fileName}')
         print(f'ERROR opening root file {fileName}', [fileName])
+        
