@@ -9,16 +9,16 @@ from PlotSetting import plotSettings, labels
 
 folderName = 'stackedPlots'
 sliceTag = [
-# '801165',
-'801166',
-'801167',
-'801168',
-'801169',
-'801170',
-'801171',
-'801172',
-'801173',
-'801174',
+    # '801165',
+    '801166',
+    '801167',
+    '801168',
+    '801169',
+    '801170',
+    '801171',
+    '801172',
+    '801173',
+    '801174',
 ]
 
 
@@ -69,7 +69,8 @@ variableNames1DHisto.add('eta_diff_3')
 
 # variableNames1DHisto = ["leading_true_pt", "NPV", "mu", "constit_pt", "true_pt", "rho", "jet_area", "constit_eta", "true_eta", "num_jets", "leading_true_pt", "leading_reco_pt", "beamSpotWeight", "jet_E", "jet_E_true"]
 weight_name = ['R_weight', ]
-# All weight values are : "R_weight", "tot_weight" , "weight" 
+# All stared weight values are : "R_weight", "tot_weight" , "weight" 
+# "R_weight" is the one that is produced at reweighting step
 
 varBinning = {
 'mu' : [70, 0, 70],
@@ -105,8 +106,10 @@ varBinning = {
 }
 
 colors = [ROOT.kRed, ROOT.kBlue, ROOT.kGreen, ROOT.kYellow, ROOT.kOrange, ROOT.kCyan, ROOT.kMagenta, ROOT.kGray, ROOT.kViolet, ROOT.kAzure, ROOT.kTeal, ROOT.kSpring, ROOT.kPink, ROOT.kRed+3, ROOT.kBlue-7]
+
 def format_sci_notation(value):
     return f'{value:.1e}'
+
 def getJZValue(fName):
     # re.search('JZ(\d+)', fName  )
     countFoundDSID = []
@@ -256,9 +259,11 @@ class Quantities:
         self.extendedVariables = extendedVariables
         self.extDictVariables = {}
         self.args = args
+        
     def printDict(self):
         print(self.dictVariables)
         return
+    
     def evaluateExtended(self):
         '''
         This method evaluates the extended variables. 
@@ -304,17 +309,19 @@ class Quantities:
         self.extDictVariables['one'] = array.array( 'd', [1])
             
         return
+    
     def setFileName(self, file):
         self.file = file
         self.jzNumber, self.dsid = getJZValue(file)
         return
+    
     def __call__(self, name):
         if name in self.dictVariables:
             return self.dictVariables[name]
         elif name in self.extDictVariables:
             return self.extDictVariables[name]
         else:
-            print(f'ERROR: variable {name} not found in {self.file}')
+            print(f'ERROR: variable [{name}] not found in: {self.file}')
             exit(1)
         return None
 
@@ -336,6 +343,7 @@ def fill1DHistos(histos, vList, wList, sList, fillVector : Quantities):
                     histos[nameTag].Fill(value[i], weight[0])
                     
     return  
+
 def traverseTree(fName, tName, histos, kwargs, args): 
     print('\nFound JZ value:', getJZValue(fName)[1])
     print('JZ Index:', getJZValue(fName)[0])
@@ -405,14 +413,14 @@ def traverseTree(fName, tName, histos, kwargs, args):
     fi = Quantities(str(fName.decode()), dictVariables, extendedVariables, args)
     fi.setFileName(str(fName.decode()))
 
-
-    tree.SetBranchAddress("R_weight", R_weight)
+    #-----------------------------------------
+    tree.SetBranchAddress("weight", R_weight)
     tree.SetBranchAddress("njet", njet)
     tree.SetBranchAddress("NPV", NPV)
     tree.SetBranchAddress("actualInteractionsPerCrossing", actualInteractionsPerCrossing)
     tree.SetBranchAddress("averageInteractionsPerCrossing", averageInteractionsPerCrossing)
 
-
+    #-----------------------------------------
     tree.SetBranchAddress("jet_m", jet_m)
     tree.SetBranchAddress("jet_true_m", jet_true_m)
     tree.SetBranchAddress("jet_ConstitPt", jet_ConstitPt)
@@ -439,6 +447,9 @@ def traverseTree(fName, tName, histos, kwargs, args):
 
     for ievt in range(tillEvent):
         tree.GetEntry(ievt)
+        # print('Dictionary of tree object:')
+        # print(tree.__dict__)
+        # print(tree.R_weight)
         fi.evaluateExtended()
         fill1DHistos(histos, variableNames1DHisto, weight_name, sliceTag, fi)    
 
@@ -538,7 +549,8 @@ def plotHistStack(histList, vName, wName, varBinning, args):
 
     canvas = ROOT.TCanvas(f'{vName}_{wName}', f'{vName}_{wName}', 1000, 800)
     # Setting log scale
-    canvas.SetLogy()
+    if args.logAxisY:
+        canvas.SetLogy()
     thstacked = ROOT.THStack(f'{vName}_{wName}', f'{vName}_{wName}')
     legend = ROOT.TLegend(0.7, 0.7, 0.9, 0.9)
     # Setting up ranges for diplaying plots:
@@ -557,13 +569,31 @@ def plotHistStack(histList, vName, wName, varBinning, args):
     # Remove zeros from the list:
     minValueList = [x for x in minValueList if x > 0]
     maxValueList = [x for x in maxValueList if x > 0]
-    minValueList.append(min(maxValueList)*0.1)
-    # Make a check that the list is not empty:
-    if  len(maxValueList) == 0:
+
+    print('Min value in a list:', minValueList, 'Number of elements:', len(minValueList))
+    
+    print('Max value in a list:', maxValueList, 'Number of elements:', len(maxValueList))
+
+    if len(maxValueList) == 0:
+        maxValueList.append(args.maxY)
+    
+    if len(minValueList) == 0:
+        minValueList.append(args.minY)
+
+    # Make a check that the lists are not empty:
+    if len(maxValueList) == 0:
         print('ERROR: maxValueList is empty')
         print('Check these variables:')
         print(histList, vName, wName, sep='\n')
         exit(1)
+    
+    if len(minValueList) == 0:
+        print('ERROR: minValueList is empty')
+        print('Check these variables:')
+        print(histList, vName, wName, sep='\n')
+        exit(1)
+    minValueList.append(min(maxValueList)*0.1)
+
     # Find the minimum and maximum values to display:
     minValueToDisplay = min(minValueList)
     maxValueToDisplay = sum(maxValueList)
@@ -597,15 +627,22 @@ def plotHistStack(histList, vName, wName, varBinning, args):
     canvas.SaveAs(f'{folderName}/{getDateSubstring()}/{wName}/{vName}_{wName}.png')
     return None
 
+def checkHistos(plotsFile, sName, vNames, wNames,  vBins, args):
+    return
+
 def plotStackedPlots(plotsFile, sName, vNames, wNames,  vBins, args):
+
+    print('Path to root file: {plotsFile}')
+
     folderNames = set()
     for x in uproot.open(plotsFile).keys():
         folderNames.add(x.split('/')[0].split(';')[0])
-    print('folder Names:')
-    print(f'{folderNames}')
+
+    # if folderNames 
+    print(f'Folder Name: [{folderNames}]')
     outFile = ROOT.TFile('output.root', 'read')
     mother = outFile.GetMotherDir()
-    print(outFile)
+    print(f'TFile info: {outFile}')
     for v in vNames:
         for w in wNames:
             if not v+'_'+w in folderNames:
@@ -619,7 +656,11 @@ def plotStackedPlots(plotsFile, sName, vNames, wNames,  vBins, args):
                 histos[nameTag].SetDirectory(0)
             # print('===========================================')
             # print(histos)
-            plotHistStack(histos, v, w, vBins.get(v, [100, 0, 100]), args)
+            try:
+                plotHistStack(histos, v, w, vBins.get(v, [100, 0, 100]), args)
+            except Exception as e:
+                print('failed for ', v, w)
+                print(e)
             mother = subDir.GetMotherDir()
             mother.cd()
     outFile.Close()
@@ -657,6 +698,39 @@ def checkInputFileExistence(files:list)->bool:
     
     return False
 
+def testRootFile(filePath:str, args)->int:
+    '''
+    Method to test openening and closing of root files.
+    Uses the fact that `0` is `False` in python.
+    In C++ it is reversed.
+    '''
+    filePath = filePath.strip()
+    if not isinstance(filePath, str):
+        print(f'ERROR: Provided File path is not [str], it is {type(filePath)}')
+        exit(1)
+        
+    if not os.path.exists(filePath):
+        print(f'ERROR: File is missing: {filePath}')
+        exit(1)
+    
+    numberOfEntries = -1
+        
+    try:
+        tfile = ROOT.TFile.Open(filePath,'read')
+        # print(f'Opened: {filePath}')
+        # print(uproot.open(str(filePath)).keys())
+        
+        tree = tfile.Get(args.treename)
+        numberOfEntries = tree.GetEntries()
+        tfile.Close()
+    except: 
+        print(f'File could not be opened: {filePath}')
+        
+    if numberOfEntries == -1:
+        return 0
+    else:
+        return numberOfEntries 
+
 if __name__ == '__main__':
 
     parser=argparse.ArgumentParser()
@@ -667,16 +741,20 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--maxjets', default=15, type=int, help='Max number of jets.')
     parser.add_argument('-tr', '--treename', default='IsolatedJet_tree', type=str, help='Name of nominal tree.')
     parser.add_argument('-b', '--btag', type=str, default='DL1r', help='Which btag alg to use.')
-    parser.add_argument('--test', action='store_true', help='Test the code.')
+    parser.add_argument('-test','--test', action='store_true', help='Test the code on smaller amount of entries.')
     parser.add_argument('--debug', action='store_true', help='Print out info. Use when need to develop new functionality.')
     parser.add_argument('--tag',default='_MC23d', help='Suffix to differentiate files.')
     parser.add_argument('--ignoreCuts', action='store_true', help='Ignore the cuts. Used to produced dataset for prediction.')
     parser.add_argument('-plot', '--plotOnly', action='store_true', help='To plot already produced histograms.')
-
+    parser.add_argument('-minY', '--minY', default=0.01, type=float, help='The space holder in case the weights are negative for histogram layers.')
+    parser.add_argument('-maxY', '--maxY', default=-100.0, type=float, help='The space holder in case the weights are negative for histogram layers.')
+    parser.add_argument('-lay', '--logAxisY', action='store_true', help='Option to use logarithm axis on Y-axis.')
     args = parser.parse_args()
 
     outName = 'output.root'
     inName = 'MC23a_PFlow.txt'
+    # inName = 'notReweighted.txt'
+    # inName = 'test.txt'
 
     # print(glob.glob('/eos/user/d/dtimoshy/MC23_CSSKUFO_7GeV/MC23d/MC23d_*/*.root'))
     # print(glob.glob('/eos/user/d/dtimoshy/MC23_CSSKUFO_7GeV/MC23d/MC23d_*/*.root')[0])
@@ -694,8 +772,23 @@ if __name__ == '__main__':
     
     if not checkInputFileExistence(files):
         exit(1)
+        
+    numberOfEntriesDict = {}
 
-    exit(0)
+    for fileIter in range(len(files)):
+        filePath = files[fileIter]
+        filePath = filePath.strip()
+        fileResult = testRootFile(filePath, args)
+        if not fileResult:
+            print(f'ERROR: a problem with file: {filePath}')
+            exit(1)
+            
+        numberOfEntriesDict[fileIter] = {'EntriesCount':fileResult, 'JZValue':getJZValue(filePath),}
+            
+    print(numberOfEntriesDict)
+            
+    # exit(0)
+    print(type(args))
     if not args.plotOnly:
         outName = mainScript( inName, outName, args )
 
