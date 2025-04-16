@@ -9,7 +9,6 @@ from utils.plotSetting import plotSettings, labels
 from utils.prepareEnviroment import setTime, createOutputFolder, getFilesFromFile, checkInputNtuples
 from utils.utils import getJZValue, displayHeader
 
-folderName = 'stackedPlots'
 sliceTag = [
     # '801165',
     # '801166',
@@ -91,16 +90,16 @@ weight_name = ['R_weight', ]
 varBinning = {
 'mu' : [70, 0, 70],
 'NPV' : [50, 0, 50],
-'leading_true_pt' : [101, -10, 1000],
-'leading_reco_pt' : [101, -10, 1000],
-'last_true_E' : [101, -10, 1000],
-'last_reco_E' : [101, -10, 1000],
-'jet_pt' : [101, -10, 1000],
-'jet_true_e' : [101, -10, 1000],
-'jet_true_pt' : [101, -10, 1000],
-'last_true_pt' : [101, -10, 1000],
-'jet_ConstitPt' : [101, -10, 1000],
-'jet_E' : [101, -10, 1000],
+'leading_true_pt' : [101, -10, 2000],
+'leading_reco_pt' : [101, -10, 2000],
+'last_true_E' : [101, -10, 2000],
+'last_reco_E' : [101, -10, 2000],
+'jet_pt' : [101, -10, 2000],
+'jet_true_e' : [101, -10, 2000],
+'jet_true_pt' : [101, -10, 2000],
+'last_true_pt' : [101, -10, 2000],
+'jet_ConstitPt' : [101, -10, 2000],
+'jet_E' : [101, -10, 2000],
 'njet' : [20, -0.5, 19.5],
 
 'reco_eta' : [90, -4.5, 4.5],
@@ -378,16 +377,15 @@ def traverseTree(fName, tName, histos, kwargs, args):
     print(f'Processing events: [{tillEvent}]')
     for ievt in range(tillEvent):
         tree.GetEntry(ievt)
-        # print('Dictionary of tree object:')
-        
-        # print(tree.__dict__)
-        # print(tree.njet)
-        # print(tree.NPV)
         
         executed = fi.evaluateExtended()
         if executed:
             eventsProcessed += 1
-            fill1DHistos(histos, variableNames1DHisto, weight_name, sliceTag, fi)    
+            fill1DHistos(histos, variableNames1DHisto, weight_name, sliceTag, fi)
+            
+        if eventsProcessed%1000 == 0 and not eventsProcessed == 0:
+            print(f'Processed events: [{eventsProcessed}/{tillEvent}: {(eventsProcessed/tillEvent):.2f}]')
+            
 
     print(f'Processed events: [{eventsProcessed}/{tillEvent}: {(eventsProcessed/tillEvent):.2f}]')
 
@@ -439,8 +437,8 @@ def produceHistograms(inName, outName, args):
     for file in files:
         # Printing number of file in a list:
         print(f'Processing file {files.index(file)+1}/{totalFiles}:', file)
-        print('Variables and their type:', getVariablesFromTree(file, args.treename)[1] )
-        print('Variables to calculate:',   getVariablesFromTree(file, args.treename)[2] )
+        # print('Variables and their type:', getVariablesFromTree(file, args.treename)[1] )
+        # print('Variables to calculate:',   getVariablesFromTree(file, args.treename)[2] )
         traverseTree(file, args.treename, histos, [variableNames1DHisto, weight_name,  sliceTag], args=args)
     finalizeHistos(histos, variableNames1DHisto, weight_name, sliceTag, args.output_file)
     
@@ -508,9 +506,9 @@ def plotHistStack(histList, vName, wName, varBinning, args):
 
 
     if args.verbose:
-        print('Min value in a list:', minValueList, 'Number of elements:', len(minValueList))
+        print(f'Min value in a list: [{minValueList}]; Number of elements: [{minValueList}]')
     if args.verbose:
-        print('Max value in a list:', maxValueList, 'Number of elements:', len(maxValueList))
+        print(f'Max value in a list: [{maxValueList}]; Number of elements: [{maxValueList}]')
 
     if len(maxValueList) == 0:
         maxValueList.append(args.maxY)
@@ -534,7 +532,7 @@ def plotHistStack(histList, vName, wName, varBinning, args):
 
     # Find the minimum and maximum values to display:
     minValueToDisplay = min(minValueList)
-    maxValueToDisplay = sum(maxValueList)
+    maxValueToDisplay = sum(maxValueList) * 1.5
     if args.debug: 
         print('===========================================')
         print(f'minValueToDisplay for: {vName} with {wName}', minValueToDisplay)
@@ -565,9 +563,17 @@ def plotHistStack(histList, vName, wName, varBinning, args):
     canvas.Update()
     
     # NOTE: Add tag to the name of the file!
-    os.system(f'mkdir -p ./{folderName}/{args.datetime}')
-    os.system(f'mkdir -p ./{folderName}/{args.datetime}/{wName}')
-    canvas.SaveAs(f'{folderName}/{args.datetime}/{wName}/{vName}_{wName}.png')
+    
+    if args.tag is not None and args.tag != '':
+        outputPlotFolder = f'{args.plotFolderName}/{args.datetime}_{args.tag}/{wName}/'
+    else:
+        outputPlotFolder = f'{args.plotFolderName}/{args.datetime}/{wName}/'
+    outputPlotFolder.replace('//', '/')
+        
+    os.makedirs(outputPlotFolder, exist_ok=True)
+    
+    
+    canvas.SaveAs(f'{outputPlotFolder}/{vName}_{wName}.png')
     return None
 
 def checkHistos(plotsFile, sName, vNames, wNames,  vBins, args):
@@ -591,7 +597,7 @@ def plotStackedPlots(plotsFile:str, sName, vNames, wNames,  vBins, args):
 
     # if folderNames 
     print(f'Folder Name: [{folderNames}]')
-    outFile = ROOT.TFile('output.root', 'read')
+    outFile = ROOT.TFile(plotsFile, 'read')
     mother = outFile.GetMotherDir()
     print(f'TFile info: {outFile}')
     for v in vNames:
@@ -623,7 +629,7 @@ def plotStackedPlots(plotsFile:str, sName, vNames, wNames,  vBins, args):
 if __name__ == '__main__':
 
     parser=argparse.ArgumentParser(description='This script produces histograms from ntuple files. Also plots them. Depending on the options provided, runs either of steps.')
-    parser.add_argument('-il', '--input_list', default='inputLists/ntuples_MC20a_test.txt', type=str, help='File with list of input files (ntuples) location.')
+    parser.add_argument('-il', '--input_list', default='inputLists/ntuples_MC20a.txt', type=str, help='File with list of input files (ntuples) location.')
     parser.add_argument('-of', '--output_file', default='Output/output.root', type=str, help='Output file that containes the histograms.')
     parser.add_argument('-tr', '--treename', default='IsolatedJet_tree', type=str, help='Name of nominal tree.')
     parser.add_argument('-test','--test', action='store_true', help='Test the code on smaller amount of entries.')
@@ -636,10 +642,11 @@ if __name__ == '__main__':
     parser.add_argument('-lay', '--logAxisY', action='store_true', help='Option to use logarithm axis on Y-axis.')
     parser.add_argument('-verbose', '--verbose', action='store_true', help='Option to use print more information.')
     # NOTE: tag not used
-    parser.add_argument('-tag', '--tag',default='_MC23d', help='Suffix to differentiate files.')
+    parser.add_argument('-tag', '--tag',default='', help='Suffix to differentiate files.')
     args = parser.parse_args()
 
     args.sliceList = sliceTag    
+    args.plotFolderName = './stackedPlots'
     setTime(args)
     createOutputFolder(args)
     
@@ -655,6 +662,7 @@ if __name__ == '__main__':
         print('Or: [-plot | --plotOnly] for plotting.')
         exit(0)
         
+    outName = args.output_file
     if not args.plotOnly:
         outName = produceHistograms( args.input_list, args.output_file, args )
 
